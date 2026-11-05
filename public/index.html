@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8">
+<html lang="ru"><head><meta charset="utf-8"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Unbounded:wght@500..900&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>СЛОВОБОЙ</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{--ink:#080d1a;--panel:#111a33;--amber:#ffb703;--mint:#2ee6a6;--coral:#ff4d6d;--ice:#d6e6ff}
 *{box-sizing:border-box;margin:0}
-body{min-height:100vh;color:var(--ice);font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden;
+body{min-height:100vh;color:var(--ice);font-family:'Manrope','Segoe UI',system-ui,sans-serif;overflow-x:hidden;
  background:radial-gradient(900px 600px at 50% 35%,#16244a,transparent),var(--ink)}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:22px 16px;min-height:100vh;display:flex;flex-direction:column;justify-content:center;gap:14px}
-h1{font:900 clamp(44px,12vw,76px)/1 'Arial Black','Segoe UI Black',Impact,sans-serif;text-align:center;color:var(--amber);letter-spacing:3px;text-shadow:0 0 24px #ffb70380,0 4px 0 #b37a00}
+h1{font:900 clamp(44px,12vw,76px)/1 'Unbounded','Arial Black','Segoe UI Black',Impact,sans-serif;text-align:center;color:var(--amber);letter-spacing:3px;text-shadow:0 0 24px #ffb70380,0 4px 0 #b37a00}
 .card{background:var(--panel);border:2px solid #25345f;border-radius:6px 22px 6px 22px;padding:18px;box-shadow:0 0 0 1px #000,0 12px 40px #0009}
 .sub{font-size:13px;opacity:.65;text-align:center;margin:6px 0}
 input,button{font:inherit;width:100%;padding:14px 16px;border-radius:10px;border:2px solid #2c3d70;background:#0a1128;color:#fff;outline:none}
@@ -22,7 +22,7 @@ button.alt{background:var(--mint);box-shadow:0 5px 0 #17996f}
 button:disabled{opacity:.4;pointer-events:none}
 .row{display:flex;gap:10px;margin-top:12px}.row button{width:auto;white-space:nowrap}
 .hide{display:none!important}.center{text-align:center}
-.code{font:900 64px 'Arial Black',Impact,sans-serif;letter-spacing:10px;text-align:center;color:var(--mint);cursor:pointer;text-shadow:0 0 20px #2ee6a680}
+.code{font:900 64px 'Unbounded','Arial Black',Impact,sans-serif;letter-spacing:10px;text-align:center;color:var(--mint);cursor:pointer;text-shadow:0 0 20px #2ee6a680}
 .pls{display:flex;flex-direction:column;gap:6px;margin:12px 0}
 .pl{display:flex;justify-content:space-between;padding:10px 14px;background:#0a1128;border-radius:8px;border-left:4px solid #2c3d70}
 .pl.turn{border-left-color:var(--amber);background:#1c2750;box-shadow:0 0 18px #ffb70340}
@@ -31,7 +31,7 @@ button:disabled{opacity:.4;pointer-events:none}
 .rb svg{position:absolute;inset:0;width:100%;height:100%}
 .trk{fill:none;stroke:#1b2850;stroke-width:10}
 .rg{fill:none;stroke-width:10;stroke-linecap:round;stroke-dasharray:565.5;transform:rotate(-90deg);transform-origin:center}
-#letter{position:absolute;inset:0;display:grid;place-items:center;font:900 clamp(80px,26vw,120px) 'Arial Black',Impact,sans-serif;color:#fff;text-shadow:0 0 30px var(--amber)}
+#letter{position:absolute;inset:0;display:grid;place-items:center;font:900 clamp(80px,26vw,120px) 'Unbounded','Arial Black',Impact,sans-serif;color:#fff;text-shadow:0 0 30px var(--amber)}
 #sec{position:absolute;left:0;right:0;bottom:12%;text-align:center;font-weight:800;opacity:.7}
 .hist{font-size:14px;opacity:.8;display:flex;flex-wrap:wrap;gap:6px}
 .hist span{background:#0a1128;border-radius:6px;padding:4px 9px}
@@ -47,7 +47,7 @@ h1{animation:bob 3.2s ease-in-out infinite}@keyframes bob{50%{transform:translat
 .pn{display:flex;align-items:center}.av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:900 15px system-ui;font-style:normal;margin-right:10px;color:#111;flex:none}
 .quit{margin-top:10px;background:#25345f;color:#fff;box-shadow:0 5px 0 #141e3d}
 .hist .t1{background:#17325a;color:#8fc4ff}.hist .t2{background:#33205a;color:#d0a3ff}.hist .t3{background:#5a2a00;color:#ffa552}
-#banner{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%) scale(.3);z-index:7;text-align:center;pointer-events:none;opacity:0;width:92vw;font:900 clamp(26px,8vw,54px) 'Arial Black',Impact,sans-serif;color:var(--c);text-shadow:0 0 30px var(--c),0 4px 0 #000}
+#banner{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%) scale(.3);z-index:7;text-align:center;pointer-events:none;opacity:0;width:92vw;font:900 clamp(26px,8vw,54px) 'Unbounded','Arial Black',Impact,sans-serif;color:var(--c);text-shadow:0 0 30px var(--c),0 4px 0 #000}
 #banner small{display:block;font-size:.55em;color:#fff;margin-top:6px}
 #banner.go{animation:ban 1.9s ease-out}
 @keyframes ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-6deg)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}30%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-85%) scale(1)}}
@@ -90,6 +90,14 @@ button:active{transform:scale(.98)}
 @keyframes sh{20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
 @keyframes mshake{25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,0)}}
 @media (prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
+/* --- beauty pass --- */
+h1{background:linear-gradient(100deg,#ffb703 20%,#fff1b8 45%,#ffb703 70%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;animation:bob 6s ease-in-out infinite,shine 8s linear infinite;letter-spacing:.02em}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-.4deg);filter:drop-shadow(0 4px 0 #b37a0088)}50%{transform:translateY(-10px) rotate(.4deg);filter:drop-shadow(0 0 24px #ffb703aa)}}
+@keyframes shine{to{background-position:-220% center}}
+.card{background:linear-gradient(165deg,#17234699,#0e1630d9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid #2f4175;border-radius:20px;box-shadow:0 18px 50px #0008,inset 0 1px 0 #ffffff12}
+::selection{background:#ffb70355}
+:focus-visible{outline:2px solid #ffb703;outline-offset:3px;border-radius:8px}
+*{scrollbar-width:thin;scrollbar-color:#2f4175 transparent}
 </style></head><body>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">🔊</button><button id="trk" title="Сменить музыку">🎵</button>
 <main>
