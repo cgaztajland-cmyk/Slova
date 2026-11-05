@@ -439,7 +439,7 @@ function startTurn(r) {
     award(r, alive[0]); bcast(r, { t: 'ev', k: 'over' }); return sync(r);
   }
   do { r.turn = (r.turn + 1) % r.players.length; } while (!r.players[r.turn].alive);
-  r.deadline = Date.now() + TURN_MS; r.frz = false;
+  r.deadline = Date.now() + TURN_MS; r.turnAt = Date.now(); r.frz = false;
   armTimer(r);
   sync(r);
 }
@@ -638,8 +638,13 @@ async function handle(ws, m) {
   }
   if (m.t === 'word') {
     if (r.phase !== 'play' || r.players[r.turn].id !== p.id || typeof m.w !== 'string' || m.w.length > 40) return;
+    // анти-бот: человек не отвечает быстрее ~0.45 с после начала хода; повторы подряд блокируем
+    const since = Date.now() - (r.turnAt || 0);
+    if (since < 450) { p.fast = (p.fast || 0) + 1; if (p.fast >= 4) return ws.close(1008); return; }
+    if (Date.now() - (p.lastW || 0) < 300) return;
+    p.lastW = Date.now();
     const w = norm(m.w), bad = checkWord(r, w);
-    if (bad) return send(ws, { t: 'err', msg: bad });
+    if (bad) { p.bad = (p.bad || 0) + 1; if (p.bad > 40) return ws.close(1008); return send(ws, { t: 'err', msg: bad }); }
     const tr = tier(w), aw = addWord(p, w, tr), gain = aw.gain;
     r.used.add(w); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
     bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr });
