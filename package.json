@@ -1,0 +1,9 @@
+{
+  "name": "slovoboy",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "get-words": "node get-words.js" },
+  "dependencies": { "google-auth-library": "^9.0.0",
+    "ws": "^8.18.0" }
+}
