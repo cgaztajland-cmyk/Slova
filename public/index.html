@@ -76,6 +76,20 @@ img.av{object-fit:cover}
 #invite{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9;background:#111a33;border:2px solid var(--mint);border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;max-width:94vw}
 #invite button{width:auto;margin:0;padding:8px 12px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+/* --- calm polish --- */
+body::before,body::after{content:"";position:fixed;z-index:-1;width:46vmax;height:46vmax;border-radius:50%;filter:blur(90px);opacity:.15;pointer-events:none;animation:drift 28s ease-in-out infinite alternate}
+body::before{background:#ffb703;top:-18vmax;left:-12vmax}
+body::after{background:#3a86ff;bottom:-20vmax;right:-14vmax;animation-duration:34s;animation-delay:-9s}
+@keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.15)}}
+h1{animation:bob 6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-.4deg)}50%{transform:translateY(-10px) rotate(.4deg);text-shadow:0 0 40px #ffb703aa,0 6px 0 #b37a00}}
+section{animation:inn .7s cubic-bezier(.22,1,.36,1)}
+button{transition:transform .25s cubic-bezier(.22,1,.36,1),filter .3s,box-shadow .3s}
+button:hover{transform:translateY(-2px);filter:brightness(1.08)}
+button:active{transform:scale(.98)}
+@keyframes sh{20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+@keyframes mshake{25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,0)}}
+@media (prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}}
 </style></head><body>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">🔊</button><button id="trk" title="Сменить музыку">🎵</button>
 <main>
@@ -132,8 +146,12 @@ let ac, sg, mg, musicOn = true;
 function A() {
   if (!ac) {
     ac = new (window.AudioContext || window.webkitAudioContext)();
-    sg = ac.createGain(); sg.gain.value = .9; sg.connect(ac.destination);
-    mg = ac.createGain(); mg.gain.value = .6; mg.connect(ac.destination);
+    const mst = ac.createGain(); mst.gain.value = .85;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4800; lp.Q.value = .4;
+    const dl = ac.createDelay(); dl.delayTime.value = .23; const fb = ac.createGain(); fb.gain.value = .32; const wet = ac.createGain(); wet.gain.value = .22;
+    mst.connect(lp); lp.connect(ac.destination); lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(ac.destination);
+    sg = ac.createGain(); sg.gain.value = .9; sg.connect(mst);
+    mg = ac.createGain(); mg.gain.value = .6; mg.connect(mst);
     startMusic();
   }
   if (ac.state === 'suspended') ac.resume();
@@ -142,16 +160,17 @@ function tone(f, d = .15, type = 'sine', v = .2, when = 0, dest) {
   if (!ac) return;
   const t = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
   o.type = type; o.frequency.value = f;
-  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + d);
   o.connect(g); g.connect(dest || sg); o.start(t); o.stop(t + d);
 }
 const TRACKS = [
+  { n: 'Тихий дрейф', ms: 900, w: 'sine', v: .06, b: 'sine', pat: [0, 1, 2, 1], ch: [[196, 246.9, 293.7], [174.6, 220, 261.6], [164.8, 196, 246.9], [146.8, 185, 220]] },
   { n: 'Неон', ms: 260, w: 'triangle', v: .05, b: 'sine', pat: [0, 1, 2, 1], ch: [[220, 261.6, 329.6], [174.6, 220, 261.6], [261.6, 329.6, 392], [196, 246.9, 293.7]] },
   { n: 'Аркада', ms: 140, w: 'square', v: .03, b: 'square', pat: [0, 2, 1, 2], ch: [[261.6, 329.6, 392], [196, 246.9, 293.7], [220, 261.6, 329.6], [174.6, 220, 261.6]] },
   { n: 'Космос', ms: 520, w: 'sine', v: .07, b: 'sine', pat: [0, 1, 2, 1], ch: [[146.8, 220, 293.7], [130.8, 196, 261.6], [116.5, 174.6, 233.1], [110, 164.8, 220]] },
   { n: 'Погоня', ms: 170, w: 'sawtooth', v: .03, b: 'sawtooth', pat: [0, 1, 2, 1], ch: [[164.8, 196, 246.9], [130.8, 164.8, 196], [146.8, 185, 220], [123.5, 155.6, 185]] }
 ];
-let trk = Math.floor(Math.random() * TRACKS.length), step = 0, mStarted = false;
+let trk = 0, step = 0, mStarted = false;
 function startMusic() {
   if (mStarted) return; mStarted = true;
   const tick = () => {
@@ -168,7 +187,7 @@ function startMusic() {
 function nextTrack() { A(); trk = (trk + 1) % TRACKS.length; step = 0; musicOn = true; $('snd').textContent = '🔊'; toast('Музыка: ' + TRACKS[trk].n); }
 const sfx = {
   ok() { tone(660, .12, 'triangle'); tone(880, .15, 'triangle', .2, .09); tone(1320, .25, 'triangle', .18, .18); },
-  err() { tone(130, .3, 'sawtooth', .22); tone(95, .35, 'sawtooth', .2, .1); },
+  err() { tone(150, .3, 'triangle', .2); tone(110, .35, 'triangle', .18, .1); },
   out() { [520, 400, 300, 200].forEach((f, i) => tone(f, .2, 'square', .15, i * .12)); },
   join() { tone(500, .08, 'sine'); tone(750, .12, 'sine', .2, .07); },
   t1() { [660, 880, 1100].forEach((f, i) => tone(f, .25, 'sine', .22, i * .08)); },
