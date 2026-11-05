@@ -384,7 +384,7 @@ const server = http.createServer((req, res) => {
       'Strict-Transport-Security': 'max-age=31536000',
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
       'Referrer-Policy': 'no-referrer',
-      'Content-Security-Policy': "default-src 'self'; script-src " + HASH + " https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; connect-src 'self' ws: wss: https://accounts.google.com/gsi/; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
+      'Content-Security-Policy': "default-src 'self'; script-src " + HASH + " https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src https://accounts.google.com/gsi/; connect-src 'self' ws: wss: https://accounts.google.com/gsi/; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
     });
     return res.end(HTML);
   }
