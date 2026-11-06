@@ -167,6 +167,21 @@ html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}but
   #foot{padding-bottom:6px}
 }
 @media (max-width:640px) and (max-height:620px){main{padding-top:calc(58px + env(safe-area-inset-top))}.card{padding:12px}}
+/* --- polish v7 --- */
+#tools{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:10px;z-index:8;display:flex;gap:2px;padding:4px;border-radius:999px;background:rgba(16,24,52,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(120,150,255,.25);box-shadow:0 8px 30px #0007,inset 0 1px 0 #ffffff14}
+#tools button{position:static!important;width:42px;height:42px;min-height:0!important;padding:0;margin:0;border-radius:50%;display:grid;place-items:center;font-size:19px;background:transparent!important;box-shadow:none!important;color:#e8eefc!important;transition:background .25s,transform .25s}
+#tools button:hover{background:rgba(255,255,255,.1)!important;transform:translateY(-1px)}
+#tools #mailfab{color:#ffb703!important;position:relative!important}
+#tools .chip{position:absolute;top:-2px;right:-2px;font-size:11px;padding:1px 6px}
+.fcard{display:flex!important;align-items:center;gap:14px;width:100%;text-align:left;padding:14px 16px;border-radius:20px;background:linear-gradient(135deg,rgba(46,230,166,.18),rgba(25,184,214,.10))!important;border:1px solid rgba(46,230,166,.35);box-shadow:0 10px 30px rgba(25,184,214,.15),inset 0 1px 0 #ffffff14!important;color:#e8fff6!important}
+.fcard .ico{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,#2ee6a6,#19b8d6);box-shadow:0 6px 18px #19b8d655}
+.fcard .ft{flex:1;display:flex;flex-direction:column;gap:2px}.fcard .ft b{font-family:'Unbounded','Exo 2',sans-serif;font-size:15px}.fcard .ft small{opacity:.7;font-size:12px;font-weight:600}
+.fcard .chev{font-size:26px;opacity:.55}
+.scorechip{margin-left:auto;font-weight:800;color:#ffd166}
+.ptspop{position:fixed;left:50%;top:34%;z-index:12;transform:translateX(-50%);font-family:'Unbounded','Exo 2',sans-serif;font-size:24px;font-weight:800;color:#ffd166;text-shadow:0 0 22px #ffb703;pointer-events:none;animation:pts 1.5s ease-out forwards}
+@keyframes pts{0%{opacity:0;transform:translate(-50%,16px) scale(.8)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}100%{opacity:0;transform:translate(-50%,-70px)}}
+.sbrow{padding:6px 0;font-weight:700;font-size:16px}
+#rMode{width:100%}
 </style></head><body><button id="mailfab" class="hide" title="Почта">✉<span id="mailcnt" class="chip hot"></span></button>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">🔊</button><button id="trk" title="Сменить музыку">🎵</button>
 <main>
@@ -178,7 +193,7 @@ html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}but
   <details class="sub lvhelp"><summary>Как растёт уровень?</summary>+1 XP за каждое слово, +10 за победу, +20 за выполненное задание дня. Каждые 100 XP — новый уровень. Игры с ботами опыт за победы не дают.</details>
   <button id="bPlay">▶ ИГРАТЬ</button>
   <div id="rtxt0" class="sub" style="text-align:center">Выбери режим и вперёд</div>
-  <div class="row"><button id="bFr" class="navb">👥 Друзья <span id="frcnt" class="chip"></span></button></div>
+  <div class="row"><button id="bFr" class="fcard"><span class="ico">👥</span><span class="ft"><b>Друзья</b><small id="frsub">Добавляй друзей и играй вместе</small></span><span id="frcnt" class="chip"></span><span class="chev">›</span></button></div>
   <div id="dq"></div>
   <button id="bOut" class="quit">Выйти из аккаунта</button>
   <div id="foot">
@@ -198,15 +213,15 @@ html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}but
 <section id="play" class="card hide">
   <div class="row" style="margin:0 0 6px;align-items:center"><button id="bPlayBack" class="quit" style="width:auto;margin:0">← Назад</button><div style="flex:1;text-align:right;font-weight:800">Выбери режим</div></div>
   <div class="mode q"><h3>🚀 Быстрая игра</h3><p>Без рейтинга. Ищем живых соперников; если за 12 секунд никого нет, подключим ботов.</p><button id="bQuick" class="navb quick">Играть</button></div>
-  <div class="mode b"><h3>🤖 Против ботов</h3><p>Тренировка в любое время. Выбери сложность и число соперников.</p><div class="row"><select id="botLvl"><option value="easy">Новичок</option><option value="mid" selected>Игрок</option><option value="hard">Мастер</option></select><select id="botN"><option>1</option><option selected>2</option><option>3</option></select><button id="bBots" class="navb bots">Играть</button></div></div>
-  <div class="mode r"><h3>⚔️ Рейтинговая</h3><p>1 на 1, влияет на рейтинг и лигу.</p><div id="rtxt" class="sub"></div><div class="row"><button id="bRated">Искать соперника</button><button id="bTop" class="quit" style="width:auto;margin:0">🏆</button></div></div>
+  <div class="mode b"><h3>🤖 Против ботов</h3><p>Тренировка в любое время. Выбери сложность и число соперников.</p><div class="row"><select id="botLvl"><option value="easy">Новичок</option><option value="mid" selected>Игрок</option><option value="hard">Мастер</option></select><select id="botN"><option>1</option><option selected>2</option><option>3</option></select><select id="botRules"><option value="survival">Выживание</option><option value="score">⭐ Звёздный счёт</option></select><button id="bBots" class="navb bots">Играть</button></div></div>
+  <div class="mode r"><h3>⚔️ Рейтинговая</h3><p>1 на 1, влияет на рейтинг и лигу.</p><div id="rtxt" class="sub"></div><div class="row"><select id="rMode"><option value="words">Слова</option><option value="cities">Города</option><option value="countries">Страны</option><option value="names">Имена</option></select></div><div class="row"><button id="bRated">Искать соперника</button><button id="bTop" class="quit" style="width:auto;margin:0">🏆</button></div></div>
   <div class="mode f"><h3>👥 С друзьями</h3><p>Создай комнату и отправь код или позови друзей из списка.</p><button id="bCreate">Создать комнату</button><div class="row"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div></div>
 </section>
 <section id="queue" class="card hide center"><div style="font-size:20px;font-weight:800;margin-bottom:6px">Ищем соперника...</div><div class="sub">Рейтинговая игра 1 на 1, режим «Слова». Допустимый разброс рейтинга растет с ожиданием.</div><button id="bUnq" class="quit">Отмена</button></section>
 <section id="lobby" class="card hide">
   <div class="sub">Код комнаты, нажми чтобы скопировать</div><div id="rcode" class="code"></div>
   <div id="lp" class="pls"></div>
-  <div id="modebox"><div class="sub">Режим игры</div><select id="modesel"></select><div id="modelab" class="sub"></div></div>
+  <div id="modebox"><div class="sub">Режим игры</div><select id="modesel"></select><div id="modelab" class="sub"></div><div class="sub" style="margin-top:10px">Правила</div><select id="rulesel"><option value="survival">Выживание</option><option value="score">⭐ Звёздный счёт</option></select><div id="rulesdesc" class="sub"></div></div>
   <button id="bStart">Начать игру</button><button id="bInvF" class="alt" style="margin-top:10px">👥 Позвать друзей</button><button id="bQuit" class="quit">Выйти из комнаты</button><div id="wait" class="sub"></div>
 </section>
 <section id="game" class="hide">
@@ -222,7 +237,7 @@ html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}but
 </section>
 <section id="over" class="card hide center">
   <div class="sub">Победитель</div><div id="win" class="code" style="letter-spacing:2px;font-size:44px;cursor:default"></div>
-  <div id="note" class="sub" style="font-size:16px;color:var(--amber);opacity:1"></div><div id="rtres" class="sub" style="font-size:16px;color:var(--mint);opacity:1"></div><div id="op" class="pls"></div><button id="bAgain">Играть еще раз</button><button id="bQuit2" class="quit">Выйти из комнаты</button><div id="owait" class="sub"></div>
+  <div id="note" class="sub" style="font-size:16px;color:var(--amber);opacity:1"></div><div id="scoreboard" class="sub" style="opacity:1"></div><div id="rtres" class="sub" style="font-size:16px;color:var(--mint);opacity:1"></div><div id="op" class="pls"></div><button id="bAgain">Играть еще раз</button><button id="bQuit2" class="quit">Выйти из комнаты</button><div id="owait" class="sub"></div>
 </section>
 </main>
 <script>
@@ -302,6 +317,7 @@ const NAV = { unread: 0 };
 function paintNav() {
   const on = FR.fr.filter(f => f.on).length;
   $('frcnt').textContent = FR.fr.length ? (on ? on + '/' : '') + FR.fr.length : '';
+  $('frsub').textContent = FR.fr.length ? (on ? on + ' онлайн · ' : '') + FR.fr.length + ' в списке' : 'Добавляй друзей и играй вместе';
   $('mailcnt').textContent = NAV.unread || ''; $('mailfab').classList.toggle('hide', !NICK);
 }
 function ago(t) { const s = (Date.now() - t) / 1000; return s < 60 ? 'только что' : s < 3600 ? Math.floor(s / 60) + ' мин назад' : s < 86400 ? Math.floor(s / 3600) + ' ч назад' : Math.floor(s / 86400) + ' дн назад'; }
@@ -331,6 +347,7 @@ function showMail(m) {
   const x = el('button', 'quit', 'Закрыть'); x.onclick = () => $('modal').classList.add('hide'); kids.push(x);
   $('mbody').className = 'card'; $('mbody').replaceChildren(...kids); $('modal').classList.remove('hide');
 }
+(() => { const t = document.createElement('div'); t.id = 'tools'; ['mailfab', 'snd', 'trk'].forEach(i => t.append($(i))); document.body.append(t); })();
 let frAsked = false;
 function addFriendBtns(el) {
   if (!S) return; if (!frAsked) { frAsked = true; send({ t: 'friends_get' }); }
@@ -351,6 +368,7 @@ sfx.skip = () => {
   o.connect(g); g.connect(sg); o.start(t); o.stop(t + .42); tone(660, .15, 'triangle', .15, .38); tone(990, .2, 'triangle', .15, .46);
 };
 sfx.lose = () => { [392, 330, 262, 196].forEach((f, i) => tone(f, .5, 'triangle', .16, i * .18)); tone(98, 1.3, 'sine', .25, .3); };
+function popPts(m) { if (!m.pts) return; const d = document.createElement('div'); d.className = 'ptspop'; d.textContent = '+' + m.pts + ' ⭐ ' + m.name; document.body.append(d); setTimeout(() => d.remove(), 1500); }
 function ov(cls, ms) { const o = document.createElement('div'); o.className = 'ov ' + cls; document.body.append(o); setTimeout(() => o.remove(), ms); }
 function boostFx(b) {
   if (b === 'freeze') { sfx.freeze(); centerBurst('#9be7ff', 50); ov('ice', 1500); }
@@ -399,7 +417,7 @@ function show(id) {
   ['login', 'nick', 'settings', 'friends', 'queue', 'play', 'menu', 'lobby', 'game', 'over'].forEach(s => $(s).classList.toggle('hide', s !== id));
   if (id === 'login') $('lmsg').textContent = !GID ? 'На сервере не задан GOOGLE_CLIENT_ID' : LS.get('sb_sess') ? 'Подключаюсь к серверу, это может занять до минуты...' : '';
 }
-function plist(el) { plist0(el); addFriendBtns(el); }
+function plist(el) { plist0(el); addFriendBtns(el); if (S && S.rules === 'score') [...el.children].forEach((d, i) => { const p = S.players[i]; if (!p) return; const b = document.createElement('span'); b.className = 'scorechip'; b.textContent = '⭐ ' + (p.score || 0); d.append(b); }); }
 function plist0(el) {
   el.replaceChildren(...S.players.map(p => {
     const d = document.createElement('div');
@@ -498,7 +516,7 @@ function onMsg(m) {
   else if (m.t === 'unqueued') show('menu');
   else if (m.t === 'profile') showProfile(m);
   else if (m.t === 'ev') {
-    if (m.k === 'ok') { sfx.ok(); if (m.tier) fancy(m.tier, m.name, m.word); else { centerBurst('#2ee6a6', 45); toast(m.name + ': ' + m.word.toUpperCase()); } }
+    if ((m.k === 'ok' && (popPts(m), true))) { sfx.ok(); if (m.tier) fancy(m.tier, m.name, m.word); else { centerBurst('#2ee6a6', 45); toast(m.name + ': ' + m.word.toUpperCase()); } }
     else if (m.k === 'timeout') { sfx.out(); centerBurst('#ff4d6d', 40); toast(m.name + ' не успел, минус жизнь', 1); }
     else if (m.k === 'left') { sfx.out(); toast(m.name + ' вышел', 1); }
     else if (m.k === 'off') toast(m.name + ' отключился, ждем его до 90 секунд', 1);
@@ -521,12 +539,12 @@ function render() {
     const my = S.turn === me;
     const L = $('letter'); L.textContent = S.letter ? S.letter.toUpperCase() : '?'; L.classList.remove('pop'); void L.offsetWidth; L.classList.add('pop');
     $('hint').textContent = my ? (S.letter ? 'Твой ход. Слово на «' + S.letter.toUpperCase() + '»' : 'Твой ход. Назови любое слово') : 'Ходит ' + S.players.find(p => p.id === S.turn).name;
-    $('hint').textContent += ' · ' + (MODE_NAMES[S.mode] || ''); paintInv();
+    $('hint').textContent += ' · ' + (MODE_NAMES[S.mode] || '') + (S.rules === 'score' ? ' · ⭐ ходов осталось: ' + S.tleft : ''); paintInv();
     const w = $('word'); w.disabled = !my; w.placeholder = my ? 'Твое слово' : 'Ждем ход...'; if (my) { w.focus(); }
     plist($('gp'));
     $('hist').replaceChildren(...S.hist.map(h => { const s = document.createElement('span'); s.textContent = h.w; if (h.t) s.className = 't' + h.t; return s; }));
   } else {
-    show('over'); { const mm = S.players.find(p => p.id === me), won = !!(mm && S.winner && mm.name === S.winner); $('over').classList.toggle('won', won); $('over').classList.toggle('lost', !won); } $('win').textContent = S.winner || 'Ничья'; $('note').textContent = S.note ? 'Игрок ' + S.note + '. Авто-победа!' : ''; plist($('op'));
+    show('over'); $('scoreboard').replaceChildren(...(S.rules === 'score' ? S.players.slice().sort((a, b) => (b.score || 0) - (a.score || 0)).map((p, i) => { const d = document.createElement('div'); d.className = 'sbrow'; d.textContent = (i + 1) + '. ' + (p.bot ? '🤖 ' : '') + p.name + ' — ⭐ ' + (p.score || 0); return d; }) : [])); { const mm = S.players.find(p => p.id === me), won = !!(mm && S.winner && mm.name === S.winner); $('over').classList.toggle('won', won); $('over').classList.toggle('lost', !won); } $('win').textContent = S.winner || 'Ничья'; $('note').textContent = S.note ? 'Игрок ' + S.note + '. Авто-победа!' : ''; plist($('op'));
     const host = S.host === me; $('bAgain').classList.toggle('hide', !host || S.rated); $('owait').textContent = host ? '' : 'Ждем решения хоста';
   }
 }
@@ -573,7 +591,6 @@ function showProfile(m) {
   kids.push(el('h3', '', 'Достижения ' + got + '/' + m.ach.length), al);
   if (m.myth && m.myth.length) { const hl = el('div', 'hist'); m.myth.forEach(w => hl.append(el('span', 't4', w))); kids.push(el('h3', '', 'Зал мифических слов'), hl); }
   if (m.mine) { const pb = el('button', 'pen', '✎'); pb.title = 'Сменить ник'; pb.onclick = () => { $('modal').classList.add('hide'); $('nickin').value = NICK; $('bNickCancel').classList.remove('hide'); show('nick'); }; kids[1].append(' ', pb); }
-  if (m.mine) { const sb = el('button', 'alt', '⚙ Настройки'); sb.onclick = () => { $('modal').classList.add('hide'); show('settings'); }; kids.push(sb); }
   if (!m.mine && m.id !== me && !(FR && FR.fr && FR.fr.some(f => f.nick === m.name))) { const fb = el('button', 'alt', '＋ Добавить в друзья'); fb.onclick = () => { send({ t: 'friend_add', nick: m.name }); fb.disabled = true; fb.textContent = 'Запрос отправлен'; }; kids.push(fb); } else if (!m.mine && m.id !== me) kids.push(el('div', 'friendbadge', '✓ В друзьях'));
   const x = el('button', 'quit', 'Закрыть'); x.onclick = () => $('modal').classList.add('hide'); kids.push(x);
   $('mbody').className = 'card' + (m.tiers[3] ? ' has4' : ''); $('mbody').replaceChildren(...kids); $('modal').classList.remove('hide');
@@ -621,7 +638,7 @@ function paintInv() {
 function paintMode() {
   const sel = $('modesel'), host = S.host === me;
   if (sel.options.length !== MODES.length) sel.replaceChildren(...MODES.map(k => { const o = document.createElement('option'); o.value = k; o.textContent = MODE_NAMES[k] || k; return o; }));
-  sel.value = S.mode; sel.disabled = !host;
+  sel.value = S.mode; sel.disabled = !host; $('rulesel').value = S.rules || 'survival'; $('rulesel').disabled = !host || S.rated; $('rulesdesc').textContent = S.rules === 'score' ? 'У каждого по 6 ходов. Очки за слово: обычное 1, редкое 3, эпическое 7, легендарное 15, мифическое 30, +1 за слово от 8 букв. Побеждает тот, у кого больше очков.' : 'Ошибся или не успел: минус жизнь. Побеждает последний выживший.';
   $('modelab').textContent = host ? 'Режим выбираешь ты' : 'Режим выбирает хост';
 }
 function floatEmoji(name, e) {
@@ -643,12 +660,13 @@ $('avfile').onchange = async e => {
     if (!r.ok) return toast((await r.text()) || 'Не удалось загрузить', 1);
   } catch { toast('Не удалось обработать картинку', 1); }
 };
-$('bRated').onclick = () => { A(); send({ t: 'queue' }); };
+$('bRated').onclick = () => { A(); send({ t: 'queue', mode: $('rMode').value }); };
 $('bQuitG').onclick = () => { if (confirm('Выйти из игры? Это будет считаться поражением.')) $('bQuit').click(); };
 $('bPlay').onclick = () => { A(); show('play'); };
 $('bPlayBack').onclick = () => show('menu');
+$('rulesel').onchange = () => send({ t: 'rules', rules: $('rulesel').value });
 $('bQuick').onclick = () => { A(); send({ t: 'queue', casual: true, bots: true }); };
-$('bBots').onclick = () => { A(); send({ t: 'botgame', n: +$('botN').value, lvl: $('botLvl').value }); };
+$('bBots').onclick = () => { A(); send({ t: 'botgame', n: +$('botN').value, lvl: $('botLvl').value, rules: $('botRules').value }); };
 $('bUnq').onclick = () => send({ t: 'unqueue' });
 $('bTop').onclick = () => send({ t: 'top' });
 $('bFr').onclick = () => show('friends');
