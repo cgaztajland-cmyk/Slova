@@ -19,9 +19,8 @@ const lastLetter = w => { for (let i = w.length - 1; i >= 0; i--) if (!'ьъый
 
 // ---------- профили, редкость слов, хранилище ----------
 const UP_URL = process.env.UPSTASH_URL, UP_TOKEN = process.env.UPSTASH_TOKEN, GRACE_MS = 90000;
-console.log(UP_URL ? 'Статистика: Upstash Redis' : 'Статистика только в памяти (задай UPSTASH_URL и UPSTASH_TOKEN)');
 async function up(cmd) {
-  if (!UP_URL) return null;
+  if (!UP_URL) return S3C ? kvS3(cmd) : null;
   try {
     const r = await fetch(UP_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + UP_TOKEN }, body: JSON.stringify(cmd) });
     return (await r.json()).result;
@@ -34,6 +33,28 @@ const S3C = process.env.S3_BUCKET && process.env.S3_KEY_ID && process.env.S3_SEC
   : null;
 const memAv = new Map(), avCache = new Map();
 const imgType = b => b.length > 12 ? (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff ? 'image/jpeg' : b.subarray(0, 4).toString('latin1') === '\x89PNG' ? 'image/png' : b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP' ? 'image/webp' : null) : null;
+// ---------- ключ-значение поверх S3: профили, ники, сессии, рейтинг (без Redis) ----------
+const KV = !!(UP_URL || S3C);
+console.log('Профили, ники и сессии:', UP_URL ? 'Upstash Redis' : S3C ? 'в S3 (сохраняются между перезапусками)' : 'ТОЛЬКО В ПАМЯТИ (задай S3_BUCKET, S3_KEY_ID, S3_SECRET)');
+const kvLock = new Map();
+const kvKey = k => 'kv/' + Buffer.from(String(k)).toString('base64url');
+function kvLocked(k, fn) { const prev = kvLock.get(k) || Promise.resolve(), run = prev.then(fn, fn); kvLock.set(k, run.catch(() => {})); return run; }
+async function kvRead(k) { const b = await S3C.get(kvKey(k)); if (!b) return null; const o = JSON.parse(b.toString()); return o.e && o.e < Date.now() ? null : o.v; }
+async function kvWrite(k, v, e) { await S3C.put(kvKey(k), Buffer.from(JSON.stringify({ v, e: e || 0 })), 'application/json'); }
+async function kvS3(cmd) {
+  const [op, k, v, ...rest] = cmd;
+  try {
+    if (op === 'GET') return await kvRead(k);
+    if (op === 'SET') {
+      const nx = rest.includes('NX'), ei = rest.indexOf('EX'), e = ei >= 0 ? Date.now() + Number(rest[ei + 1]) * 1000 : 0;
+      return await kvLocked(k, async () => { if (nx && (await kvRead(k)) !== null) return null; await kvWrite(k, v, e); return 'OK'; });
+    }
+    if (op === 'DEL') return await kvLocked(k, async () => { await S3C.del(kvKey(k)); return 1; });
+    if (op === 'ZADD') return await kvLocked(k, async () => { const o = (await kvRead(k)) || {}; o[rest[0]] = Number(v); await kvWrite(k, o); return 1; });
+    if (op === 'ZREVRANGE') { const o = (await kvRead(k)) || {}; return Object.entries(o).sort((a, b) => b[1] - a[1]).slice(Number(v), Number(rest[0]) + 1).map(x => x[0]); }
+  } catch (e) { console.log('KV ошибка', op, String(e.message || e).slice(0, 120)); }
+  return undefined;
+}
 async function avPut(id, buf) { avCache.delete(id); if (S3C) return S3C.put('a/' + id, buf, 'application/octet-stream'); if (UP_URL) return (await up(['SET', 'av:' + id, buf.toString('base64')])) === 'OK'; memAv.set(id, buf); return true; }
 async function avGet(id) { if (S3C) return S3C.get('a/' + id); if (UP_URL) { const b = await up(['GET', 'av:' + id]); return b ? Buffer.from(b, 'base64') : null; } return memAv.get(id) || null; }
 async function avDel(id) { try { if (S3C) return await S3C.del('a/' + id); if (UP_URL) return await up(['DEL', 'av:' + id]); memAv.delete(id); } catch {} }
@@ -63,7 +84,7 @@ function hit(map, k, max, ms) {
 const nicks = new Map(); // ник в нижнем регистре -> ключ профиля
 async function reserveNick(lc, key) {
   if (nicks.has(lc) && nicks.get(lc) !== key) return 'taken';
-  if (UP_URL) {
+  if (KV) {
     const r = await up(['SET', 'nk:' + lc, key, 'NX']);
     if (r !== 'OK') { if (r === null) { const o = await up(['GET', 'nk:' + lc]); if (o !== key) return o === undefined ? 'err' : 'taken'; } else return 'err'; }
   }
@@ -114,9 +135,10 @@ const loadLines = f => {
     return fs.readFileSync(path.join(__dirname, 'data', f), 'utf8').split(/\r?\n/).map(w => norm(w).replace(/\s*\(.*?\)\s*/g, '')).filter(w => w.length >= 2 && /^[а-я]+([ -][а-я]+)*$/.test(w) && !VULGAR.test(w));
   } catch { return []; }
 };
-const MODE_DEF = [['words', 'Слова'], ['cities', 'Города'], ['names', 'Имена'], ['countries', 'Страны'], ['animals', 'Животные'], ['food', 'Еда']];
+const MODE_DEF = [['words', ''], ['cities', ''], ['names', ''], ['countries', '']];
 const SETS = { words: DICT };
-['cities', 'names', 'countries', 'animals', 'food'].forEach(k => { const a = loadLines(k + '.txt'); SETS[k] = a.length ? new Set(a) : null; });
+['animals', 'food'].forEach(k => loadLines(k + '.txt').forEach(w => DICT.add(w)));
+['cities', 'names', 'countries'].forEach(k => { const a = loadLines(k + '.txt'); SETS[k] = a.length ? new Set(a) : null; });
 const ALL = new Set(); Object.values(SETS).forEach(x => x && x.forEach(w => ALL.add(w)));
 const MODES_AVAIL = MODE_DEF.filter(([k]) => SETS[k]).map(([k]) => k);
 if (MODES_AVAIL.length > 1) MODES_AVAIL.push('all');
@@ -166,10 +188,10 @@ function checkAch(key) {
 }
 
 // ---------- рейтинг (Elo), очередь, таблица лидеров ----------
-const lbSet = (key, elo) => { if (UP_URL) up(['ZADD', 'lb', String(elo), key]); };
+const lbSet = (key, elo) => { if (KV) up(['ZADD', 'lb', String(elo), key]); };
 async function lbTop() {
   let keys = [];
-  if (UP_URL) { const r = await up(['ZREVRANGE', 'lb', '0', '9']); keys = Array.isArray(r) ? r : []; }
+  if (KV) { const r = await up(['ZREVRANGE', 'lb', '0', '9']); keys = Array.isArray(r) ? r : []; }
   else keys = [...profiles.entries()].filter(([, f]) => f.rg > 0).sort((a, b) => b[1].elo - a[1].elo).slice(0, 10).map(x => x[0]);
   const out = [];
   for (const k of keys) { const f = await getProfile(k); out.push({ nick: f.nick, av: avUrl(f), elo: f.elo, lg: leagueOf(f.elo) }); }
@@ -213,7 +235,8 @@ function botTurn(r, p) {
     else r.btimer = setTimeout(() => {
       if (!live() || checkWord(r, w)) return;
       const tr = tier(w); r.used.add(w); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
-      bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr }); startTurn(r);
+      const pts = r.rules === 'score' ? (SC_PTS[tr] || 1) + (w.length >= 8 ? 1 : 0) : 0; if (pts) p.score = (p.score || 0) + pts;
+      bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr, pts }); startTurn(r);
     }, 350 + Math.random() * 450);
   };
   r.btimer = setTimeout(step, think);
@@ -228,7 +251,15 @@ function addPlayer(ws, r) {
   r.players.push(p); if (!r.hostId) r.hostId = p.id; c.room = r; c.player = p;
   send(ws, { t: 'joined', id: p.id, inv: { f: prof.bo.f, s: prof.bo.s } });
 }
+const SC_PTS = [1, 3, 7, 15, 30], SC_ROUNDS = 6;
+function finishScore(r) {
+  clearTimeout(r.timer); clearTimeout(r.btimer);
+  const ps = r.players.filter(p => !p.gone), top = Math.max(...ps.map(p => p.score || 0)), win = ps.filter(p => (p.score || 0) === top);
+  r.phase = 'over'; r.winner = win.length === 1 ? win[0].name : null; r.note = win.length === 1 ? null : 'Ничья по очкам';
+  award(r, win.length === 1 ? win[0] : null); bcast(r, { t: 'ev', k: 'over' }); sync(r);
+}
 function startGame(r) {
+  r.tcount = 0; r.started = false; r.players.forEach(x => { x.score = 0; });
   r.players.forEach(x => { x.lives = LIVES; x.alive = true; });
   r.phase = 'play'; r.turn = -1; r.letter = null; r.used.clear(); r.hist = []; r.winner = null; r.note = null;
   bcast(r, { t: 'ev', k: 'start' }); startTurn(r);
@@ -245,23 +276,23 @@ function matchmake() {
   queue.filter(q => q.casual && q.bots && now - q.since > 12000).forEach(q => {
     rm(q); const r = makeRoom('words', false); r.bots = true; dropKey(q.key, r); addPlayer(q.ws, r); addBots(r, 2, 'mid'); startGame(r);
   });
-  // рейтинговая игра: как раньше
-  const rk = queue.filter(q => !q.casual).sort((a, b) => a.elo - b.elo);
-  for (let i = 0; i < rk.length - 1; i++) {
-    const a = rk[i], b = rk[i + 1], wait = Math.max(now - a.since, now - b.since) / 1000;
-    if (a.key === b.key || Math.abs(a.elo - b.elo) > 150 + 20 * wait) continue;
-    rm(a); rm(b); rk.splice(i, 2); i--;
-    const r = makeRoom('words', true);
-    [a, b].forEach(q => { dropKey(q.key, r); addPlayer(q.ws, r); });
-    startGame(r);
-  }
+  // рейтинговая игра: пары только в одном режиме
+  ['words', 'cities', 'names', 'countries'].forEach(md => {
+    const rk = queue.filter(q => !q.casual && (q.mode || 'words') === md).sort((a, b) => a.elo - b.elo);
+    for (let i = 0; i < rk.length - 1; i++) {
+      const a = rk[i], b = rk[i + 1], wait = Math.max(now - a.since, now - b.since) / 1000;
+      if (a.key === b.key || Math.abs(a.elo - b.elo) > 150 + 20 * wait) continue;
+      rm(a); rm(b); rk.splice(i, 2); i--;
+      const r = makeRoom(md, true); [a, b].forEach(q => { dropKey(q.key, r); addPlayer(q.ws, r); }); startGame(r);
+    }
+  });
 }
 setInterval(matchmake, 2000);
 
 // ---------- друзья ----------
 async function keyOfNick(lc) {
   if (nicks.has(lc)) return nicks.get(lc);
-  const k = UP_URL ? await up(['GET', 'nk:' + lc]) : null;
+  const k = KV ? await up(['GET', 'nk:' + lc]) : null;
   if (k) nicks.set(lc, k);
   return k || null;
 }
@@ -445,8 +476,8 @@ const pub = r => ({
   t: 'state', code: r.code, phase: r.phase, host: r.hostId,
   turn: r.phase === 'play' ? r.players[r.turn].id : null,
   letter: r.letter, left: Math.max(0, r.deadline - Date.now()), total: TURN_MS + (r.frz ? 10000 : 0), mode: r.mode, rated: !!r.rated,
-  count: r.used.size, hist: r.hist.slice(-6), winner: r.winner, note: r.note,
-  players: r.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, alive: p.alive, off: !p.ws && !p.bot, bot: !!p.bot, av: p.prof ? avUrl(p.prof) : '' }))
+  count: r.used.size, rules: r.rules || 'survival', tleft: r.rules === 'score' ? Math.max(0, r.players.filter(p => !p.gone).length * SC_ROUNDS - (r.tcount || 0)) : null, hist: r.hist.slice(-6), winner: r.winner, note: r.note,
+  players: r.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, alive: p.alive, off: !p.ws && !p.bot, bot: !!p.bot, score: p.score || 0, av: p.prof ? avUrl(p.prof) : '' }))
 });
 const sync = r => bcast(r, pub(r));
 
@@ -470,7 +501,7 @@ function armTimer(r) {
   clearTimeout(r.timer);
   const cur = r.players[r.turn];
   r.timer = setTimeout(() => {
-    cur.lives--; if (cur.lives <= 0) cur.alive = false;
+    if (r.rules !== 'score') { cur.lives--; if (cur.lives <= 0) cur.alive = false; }
     bcast(r, { t: 'ev', k: 'timeout', name: cur.name });
     startTurn(r);
   }, Math.max(0, r.deadline - Date.now()));
@@ -483,6 +514,7 @@ function startTurn(r) {
     r.phase = 'over'; r.winner = alive[0] ? alive[0].name : null;
     award(r, alive[0]); bcast(r, { t: 'ev', k: 'over' }); return sync(r);
   }
+  if (r.rules === 'score') { if (r.started) r.tcount++; r.started = true; if (r.tcount >= r.players.filter(p => !p.gone).length * SC_ROUNDS) return finishScore(r); }
   do { r.turn = (r.turn + 1) % r.players.length; } while (!r.players[r.turn].alive);
   r.deadline = Date.now() + TURN_MS; r.turnAt = Date.now(); r.frz = false;
   armTimer(r);
@@ -601,13 +633,13 @@ async function handle(ws, m) {
     if (rooms.size >= MAX_ROOMS) return send(ws, { t: 'err', msg: 'Сервер перегружен, попробуй позже' });
     if (!hit(createRate, c.key, 20, 600000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди немного' });
     qRemove(ws); const r = makeRoom('words', false); r.bots = true; dropKey(c.key, r); addPlayer(ws, r);
-    addBots(r, +m.n, m.lvl); return startGame(r);
+    r.rules = m.rules === 'score' ? 'score' : 'survival'; addBots(r, +m.n, m.lvl); return startGame(r);
   }
   if (m.t === 'queue') {
     if (!c.key || c.room || queue.some(q => q.ws === ws)) return;
     const f = await getProfile(c.key);
     if (!f.nick) return send(ws, { t: 'err', msg: 'Сначала выбери ник' });
-    queue.push({ ws, key: c.key, elo: f.elo, since: Date.now(), casual: !!m.casual, bots: !!m.bots });
+    queue.push({ ws, key: c.key, elo: f.elo, since: Date.now(), casual: !!m.casual, bots: !!m.bots, mode: ['words', 'cities', 'names', 'countries'].includes(m.mode) ? m.mode : 'words' });
     return send(ws, { t: 'queued', casual: !!m.casual, bots: !!m.bots });
   }
   if (m.t === 'unqueue') { qRemove(ws); return send(ws, { t: 'unqueued' }); }
@@ -664,6 +696,7 @@ async function handle(ws, m) {
   const r = c.room, p = c.player;
   if (!r) return;
   r.last = Date.now();
+  if (m.t === 'rules') { if (p.id === r.hostId && r.phase === 'lobby' && !r.rated) { r.rules = m.rules === 'score' ? 'score' : 'survival'; sync(r); } return; }
   if (m.t === 'mode') {
     if (p.id === r.hostId && r.phase === 'lobby' && MODES_AVAIL.includes(m.mode)) { r.mode = m.mode; sync(r); }
     return;
@@ -718,8 +751,9 @@ async function handle(ws, m) {
     const w = norm(m.w), bad = checkWord(r, w);
     if (bad) { p.bad = (p.bad || 0) + 1; if (p.bad > 40) return ws.close(1008); return send(ws, { t: 'err', msg: bad }); }
     const tr = tier(w), aw = addWord(p, w, tr), gain = aw.gain;
+    const pts = r.rules === 'score' ? (SC_PTS[tr] || 1) + (w.length >= 8 ? 1 : 0) : 0; if (pts) p.score = (p.score || 0) + pts;
     r.used.add(w); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
-    bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr });
+    bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr, pts });
     startTurn(r);
     if (gain) send(ws, { t: 'inv', f: p.prof.bo.f, s: p.prof.bo.s, gain });
     qEvent(p, { k: 'word', tier: tr, fresh: aw.fresh, len: w.replace(/[ -]/g, '').length, mode: r.mode });
