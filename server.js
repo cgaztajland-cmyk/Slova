@@ -146,8 +146,8 @@ function addWord(p, w, t) {
 // ---------- уровни, лиги, достижения ----------
 const LEAGUES = [[0, 'Бронза'], [900, 'Серебро'], [1100, 'Золото'], [1300, 'Платина'], [1500, 'Алмаз'], [1700, 'Легенда']];
 const leagueOf = e => { let l = LEAGUES[0][1]; for (const x of LEAGUES) if (e >= x[0]) l = x[1]; return l; };
-const xpOf = f => f.total + f.games * 5 + f.wins * 10 + f.qd * 20;
-const levelOf = f => 1 + Math.floor(Math.sqrt(xpOf(f) / 25));
+const xpOf = f => f.total + f.wins * 10 + f.qd * 20;
+const levelOf = f => 1 + Math.floor(xpOf(f) / 100);
 const ACH = [
   ['g1', 'Первая игра', f => f.games >= 1], ['g10', '10 игр', f => f.games >= 10], ['w1', 'Первая победа', f => f.wins >= 1],
   ['w10', '10 побед', f => f.wins >= 10], ['w50', '50 побед', f => f.wins >= 50], ['t100', '100 слов', f => f.total >= 100],
@@ -186,6 +186,38 @@ function rate(r, win) {
 }
 const queue = [];
 const qRemove = ws => { const i = queue.findIndex(q => q.ws === ws); if (i >= 0) queue.splice(i, 1); };
+// ---------- боты ----------
+const BOT_NAMES = ['Орион', 'Луна', 'Нова', 'Комета', 'Квазар', 'Мира', 'Сириус', 'Астра', 'Вега', 'Зенит', 'Галактика', 'Туманность'];
+// know — какую долю словаря «знает» бот, think — пауза на раздумье (мс), cps — мс на букву, miss — шанс «не вспомнить» слово
+const BOT_LVL = { easy: { know: 14, think: [2200, 4200], cps: 330, miss: .10 }, mid: { know: 32, think: [1400, 3000], cps: 240, miss: .06 }, hard: { know: 62, think: [900, 2200], cps: 170, miss: .03 } };
+let BYL = null;
+function botIndex() { if (BYL) return BYL; BYL = new Map(); DICT.forEach(w => { const l = w[0]; if (!BYL.has(l)) BYL.set(l, []); BYL.get(l).push(w); }); return BYL; }
+const hashN = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+function addBots(r, n, lvl) {
+  lvl = BOT_LVL[lvl] ? lvl : 'mid';
+  const names = BOT_NAMES.slice().sort(() => Math.random() - .5);
+  for (let i = 0; i < Math.min(3, Math.max(1, n | 0)); i++) r.players.push({ id: crypto.randomBytes(4).toString('hex'), name: names[i], ws: null, lives: LIVES, alive: true, key: null, prof: null, kick: null, gone: false, bot: true, lvl, seed: crypto.randomBytes(4).toString('hex') });
+}
+function botTurn(r, p) {
+  const cfg = BOT_LVL[p.lvl], stamp = r.turnAt, live = () => r.phase === 'play' && r.players[r.turn] === p && r.turnAt === stamp;
+  const idx = botIndex(), letter = r.letter || [...idx.keys()][Math.floor(Math.random() * idx.size)];
+  let cand = (idx.get(letter) || []).filter(w => !r.used.has(w) && hashN(p.seed + w) % 100 < cfg.know);
+  if (p.lvl === 'hard') cand = cand.sort((a, b) => b.length - a.length).slice(0, 15);
+  if (!cand.length || Math.random() < cfg.miss) return; // «не вспомнил слово»: ход сгорит по таймеру
+  const w = cand[Math.floor(Math.random() * cand.length)];
+  const typeMs = w.length * cfg.cps, think = Math.min(cfg.think[0] + Math.random() * (cfg.think[1] - cfg.think[0]), Math.max(300, TURN_MS - typeMs - 3000));
+  let i = 0;
+  const step = () => {
+    if (!live()) return; i++; bcast(r, { t: 'typing', name: p.name, w: w.slice(0, i) });
+    if (i < w.length) r.btimer = setTimeout(step, cfg.cps * (.6 + Math.random() * .8));
+    else r.btimer = setTimeout(() => {
+      if (!live() || checkWord(r, w)) return;
+      const tr = tier(w); r.used.add(w); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
+      bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr }); startTurn(r);
+    }, 350 + Math.random() * 450);
+  };
+  r.btimer = setTimeout(step, think);
+}
 function makeRoom(mode, rated) {
   const r = { code: genCode(), players: [], hostId: null, phase: 'lobby', turn: -1, letter: null, used: new Set(), hist: [], deadline: 0, timer: null, winner: null, note: null, last: Date.now(), mode, frz: false, rated };
   rooms.set(r.code, r); return r;
@@ -203,11 +235,22 @@ function startGame(r) {
 }
 function matchmake() {
   for (let i = queue.length - 1; i >= 0; i--) if (queue[i].ws.readyState !== 1 || queue[i].ws.ctx.room) queue.splice(i, 1);
-  const now = Date.now(); queue.sort((a, b) => a.elo - b.elo);
-  for (let i = 0; i < queue.length - 1; i++) {
-    const a = queue[i], b = queue[i + 1], wait = Math.max(now - a.since, now - b.since) / 1000;
+  const now = Date.now(), rm = q => queue.splice(queue.indexOf(q), 1);
+  // быстрая игра без рейтинга: любые двое; если никого нет 12 сек и стоит галочка — добавляем ботов
+  const cas = queue.filter(q => q.casual);
+  for (let i = 0; i + 1 < cas.length; i += 2) {
+    const a = cas[i], b = cas[i + 1]; if (a.key === b.key) continue; rm(a); rm(b);
+    const r = makeRoom('words', false); [a, b].forEach(q => { dropKey(q.key, r); addPlayer(q.ws, r); }); startGame(r);
+  }
+  queue.filter(q => q.casual && q.bots && now - q.since > 12000).forEach(q => {
+    rm(q); const r = makeRoom('words', false); r.bots = true; dropKey(q.key, r); addPlayer(q.ws, r); addBots(r, 2, 'mid'); startGame(r);
+  });
+  // рейтинговая игра: как раньше
+  const rk = queue.filter(q => !q.casual).sort((a, b) => a.elo - b.elo);
+  for (let i = 0; i < rk.length - 1; i++) {
+    const a = rk[i], b = rk[i + 1], wait = Math.max(now - a.since, now - b.since) / 1000;
     if (a.key === b.key || Math.abs(a.elo - b.elo) > 150 + 20 * wait) continue;
-    queue.splice(i, 2); i--;
+    rm(a); rm(b); rk.splice(i, 2); i--;
     const r = makeRoom('words', true);
     [a, b].forEach(q => { dropKey(q.key, r); addPlayer(q.ws, r); });
     startGame(r);
@@ -321,6 +364,7 @@ function qEvent(p, e) {
 }
 
 function award(r, win) {
+  if (r.bots) return; // игры с ботами не дают рейтинг, победы и задания
   if (r.rated) rate(r, win);
   if (r.hist.length < 4) return; // слишком короткие игры не идут в статистику (защита от накрутки)
   r.players.forEach(x => { x.prof.games++; dirty.add(x.key); });
@@ -402,7 +446,7 @@ const pub = r => ({
   turn: r.phase === 'play' ? r.players[r.turn].id : null,
   letter: r.letter, left: Math.max(0, r.deadline - Date.now()), total: TURN_MS + (r.frz ? 10000 : 0), mode: r.mode, rated: !!r.rated,
   count: r.used.size, hist: r.hist.slice(-6), winner: r.winner, note: r.note,
-  players: r.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, alive: p.alive, off: !p.ws, av: avUrl(p.prof) }))
+  players: r.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, alive: p.alive, off: !p.ws && !p.bot, bot: !!p.bot, av: p.prof ? avUrl(p.prof) : '' }))
 });
 const sync = r => bcast(r, pub(r));
 
@@ -433,7 +477,7 @@ function armTimer(r) {
 }
 
 function startTurn(r) {
-  clearTimeout(r.timer);
+  clearTimeout(r.timer); clearTimeout(r.btimer);
   const alive = r.players.filter(p => p.alive);
   if (alive.length < 2) {
     r.phase = 'over'; r.winner = alive[0] ? alive[0].name : null;
@@ -443,6 +487,7 @@ function startTurn(r) {
   r.deadline = Date.now() + TURN_MS; r.turnAt = Date.now(); r.frz = false;
   armTimer(r);
   sync(r);
+  const cp = r.players[r.turn]; if (cp && cp.bot) botTurn(r, cp);
 }
 
 function attach(ws, r, p) {
@@ -468,7 +513,7 @@ function drop(r, p) {
   p.gone = true;
   if (r.phase === 'lobby') r.players = r.players.filter(x => x !== p); else p.alive = false;
   const pending = r.players.filter(x => !x.gone && (x.ws || x.kick));
-  if (!pending.length) { clearTimeout(r.timer); rooms.delete(r.code); return; }
+  if (!pending.length) { clearTimeout(r.timer); clearTimeout(r.btimer); rooms.delete(r.code); return; }
   if (r.hostId === p.id) r.hostId = (r.players.find(x => !x.gone && x.ws) || pending[0]).id;
   bcast(r, { t: 'ev', k: 'left', name: p.name });
   if (r.phase === 'play') {
@@ -496,7 +541,7 @@ async function handle(ws, m) {
   if (m.t === 'mystat') {
     if (!c.key) return;
     const f = await getProfile(c.key), xp = xpOf(f), lv = levelOf(f);
-    return send(ws, { t: 'mystat', lv, xp, a: 25 * (lv - 1) ** 2, b: 25 * lv ** 2, frc: f.fr.length, unread: f.mail.filter(x => x.t > f.mseen).length + f.rq.length });
+    return send(ws, { t: 'mystat', lv, xp, a: 100 * (lv - 1), b: 100 * lv, frc: f.fr.length, unread: f.mail.filter(x => x.t > f.mseen).length + f.rq.length });
   }
   if (m.t === 'mail_get') {
     if (!c.key) return;
@@ -549,12 +594,21 @@ async function handle(ws, m) {
     return tellKey(c.key, { t: 'me', av: '' });
   }
   if (m.t === 'top') return send(ws, { t: 'top', list: await lbTop() });
+  if (m.t === 'botgame') {
+    if (!c.key || c.room) return;
+    const f = await getProfile(c.key);
+    if (!f.nick) return send(ws, { t: 'err', msg: 'Сначала выбери ник' });
+    if (rooms.size >= MAX_ROOMS) return send(ws, { t: 'err', msg: 'Сервер перегружен, попробуй позже' });
+    if (!hit(createRate, c.key, 20, 600000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди немного' });
+    qRemove(ws); const r = makeRoom('words', false); r.bots = true; dropKey(c.key, r); addPlayer(ws, r);
+    addBots(r, +m.n, m.lvl); return startGame(r);
+  }
   if (m.t === 'queue') {
     if (!c.key || c.room || queue.some(q => q.ws === ws)) return;
     const f = await getProfile(c.key);
     if (!f.nick) return send(ws, { t: 'err', msg: 'Сначала выбери ник' });
-    queue.push({ ws, key: c.key, elo: f.elo, since: Date.now() });
-    return send(ws, { t: 'queued' });
+    queue.push({ ws, key: c.key, elo: f.elo, since: Date.now(), casual: !!m.casual, bots: !!m.bots });
+    return send(ws, { t: 'queued', casual: !!m.casual, bots: !!m.bots });
   }
   if (m.t === 'unqueue') { qRemove(ws); return send(ws, { t: 'unqueued' }); }
   if (/^(friends_get|friend_add|friend_resp|friend_del|invite)$/.test(m.t)) return friendsMsg(ws, m);
@@ -639,7 +693,7 @@ async function handle(ws, m) {
   if (m.t === 'quit') { c.room = null; c.player = null; p.ws = null; drop(r, p); return; }
   if (m.t === 'profile') {
     const x = r.players.find(y => y.id === m.id); if (!x) return;
-    const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
+    if (x.bot) return send(ws, { t: 'info', msg: '🤖 ' + x.name + ' — бот' }); const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
     return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'start' || m.t === 'again') {
