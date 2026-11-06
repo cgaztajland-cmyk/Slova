@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080d1a'/%3E%3Ctext x='32' y='47' font-size='42' font-weight='900' text-anchor='middle' fill='%23ffb703' font-family='Arial Black,sans-serif'%3E%D0%A1%3C/text%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Unbounded:wght@500..900&display=swap" rel="stylesheet">
+<html lang="ru"><head><meta charset="utf-8"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080d1a'/%3E%3Ctext x='32' y='47' font-size='42' font-weight='900' text-anchor='middle' fill='%23ffb703' font-family='Arial Black,sans-serif'%3E%D0%A1%3C/text%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400..800&family=Manrope:wght@400..800&family=Unbounded:wght@500..900&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>СЛОВОБОЙ</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{--ink:#080d1a;--panel:#111a33;--amber:#ffb703;--mint:#2ee6a6;--coral:#ff4d6d;--ice:#d6e6ff}
 *{box-sizing:border-box;margin:0}
-body{min-height:100vh;color:var(--ice);font-family:'Manrope','Segoe UI',system-ui,sans-serif;overflow-x:hidden;
+body{min-height:100vh;color:var(--ice);font-family:'Exo 2','Manrope','Segoe UI',system-ui,sans-serif;overflow-x:hidden;
  background:radial-gradient(900px 600px at 50% 35%,#16244a,transparent),var(--ink)}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:22px 16px;min-height:100vh;display:flex;flex-direction:column;justify-content:center;gap:14px}
@@ -125,7 +125,26 @@ body.slide section{animation:slideaway .8s cubic-bezier(.4,0,.2,1)}
 .friendbadge{color:#2ee6a6;font-weight:800;text-align:center;margin:8px 0}.pl .friendbadge{margin:0 0 0 auto;font-size:14px}
 .mi{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:#0b1430;margin:6px 0;text-align:left}
 .mi.new{box-shadow:inset 3px 0 0 #ffb703}.mi small{opacity:.6;display:block}
-</style></head><body>
+/* --- cosmos v5 --- */
+button,input,select{font-family:'Exo 2','Manrope',sans-serif}
+html::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.75;animation:twinkle 7s ease-in-out infinite alternate;
+background-image:radial-gradient(1.4px 1.4px at 8% 14%,#fff,#0000),radial-gradient(1px 1px at 22% 72%,#cfe3ff,#0000),radial-gradient(1.6px 1.6px at 37% 31%,#fff,#0000),radial-gradient(1px 1px at 51% 88%,#ffe9b0,#0000),radial-gradient(1.4px 1.4px at 66% 18%,#fff,#0000),radial-gradient(1px 1px at 79% 55%,#cfe3ff,#0000),radial-gradient(1.6px 1.6px at 91% 80%,#fff,#0000),radial-gradient(1px 1px at 14% 92%,#fff,#0000),radial-gradient(1.2px 1.2px at 88% 9%,#ffe9b0,#0000),radial-gradient(1px 1px at 58% 52%,#fff,#0000)}
+@keyframes twinkle{from{opacity:.4}to{opacity:.95}}
+#mailfab{position:fixed;top:12px;right:12px;z-index:6;width:46px;padding:8px;margin:0;font-size:20px;box-shadow:none;background:linear-gradient(135deg,#ffb703,#ff8a3d);color:#2a1600}
+#mailfab .chip{position:absolute;top:-6px;right:-6px;font-size:11px;padding:1px 6px}
+#snd{right:66px}#trk{right:120px}
+.navb.quick{background:linear-gradient(135deg,#8a5cff,#3a86ff);color:#fff;box-shadow:0 5px 0 #3b2a9a,0 10px 26px #3a86ff33}
+.navb.bots{background:linear-gradient(135deg,#ff5fa2,#8a5cff);color:#fff;box-shadow:0 5px 0 #8a2a6a,0 10px 26px #ff5fa233}
+.botchk{display:flex;gap:8px;align-items:center;font-size:13px;opacity:.9;margin:2px 0 8px}
+#botLvl,#botN{flex:none;width:auto;background:#0b1430;color:#e8eefc;border:1px solid #2f4175;border-radius:12px;padding:8px;font-weight:700}
+#typing{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:9;padding:8px 16px;border-radius:99px;background:#0b1430ee;border:1px solid #3a86ff;box-shadow:0 0 24px #3a86ff55;font-weight:700;display:none;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
+.pen{background:none;border:0;box-shadow:none;width:auto;padding:0 6px;margin:0;color:#ffb703;font-size:20px;cursor:pointer;vertical-align:middle}
+#foot{margin-top:14px;padding-top:12px;border-top:1px solid #2f4175;text-align:center;font-size:13px;opacity:.9}
+#foot a{color:#ffb703}#foot details{margin:8px 0}#foot summary{cursor:pointer;font-weight:700}
+.wal{display:flex;align-items:center;gap:8px;margin:8px 0;text-align:left}.wal b{width:34px}
+.wal code{flex:1;min-width:0;word-break:break-all;font-size:11px;background:#0b1430;padding:6px 8px;border-radius:8px}
+.wal button{width:auto;margin:0;padding:6px 10px;font-size:12px}
+</style></head><body><button id="mailfab" class="hide" title="Почта">✉<span id="mailcnt" class="chip hot"></span></button>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">🔊</button><button id="trk" title="Сменить музыку">🎵</button>
 <main>
 <h1>СЛОВОБОЙ</h1>
@@ -133,14 +152,27 @@ body.slide section{animation:slideaway .8s cubic-bezier(.4,0,.2,1)}
 <section id="menu" class="card hide">
   <div class="row" style="margin:0 0 12px;align-items:center"><div id="myav"></div><div id="who" style="flex:1;font-weight:800"></div><button id="bNick" class="quit" style="margin:0;width:auto">Профиль</button></div>
   <div id="lvbar"><div id="lvfill"></div></div><div id="lvtxt" class="sub" style="margin:0 0 4px"></div>
-  <details class="sub lvhelp"><summary>Как растёт уровень?</summary>Опыт (XP) даётся за слова (+1 за каждое), за сыгранные игры (+5), за победы (+10) и за выполненные задания дня (+20). Уровень = 1 + √(XP ÷ 25), поэтому чем он выше, тем больше опыта нужно до следующего: на уровень N нужно 25·(N−1)² XP.</details>
+  <details class="sub lvhelp"><summary>Как растёт уровень?</summary>+1 XP за каждое слово, +10 за победу, +20 за выполненное задание дня. Каждые 100 XP — новый уровень. Игры с ботами опыт за победы не дают.</details>
   <div class="row"><button id="bCreate">Создать комнату</button></div>
   <div class="row"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div>
   <div class="row"><button id="bRated">⚔️ Рейтинговая игра</button><button id="bTop" class="quit" style="width:auto;margin:0">🏆</button></div>
   <div id="rtxt" class="sub"></div>
-  <div class="row"><button id="bFr" class="navb">👥 Друзья <span id="frcnt" class="chip"></span></button><button id="bMail" class="navb mail">✉ Почта <span id="mailcnt" class="chip hot"></span></button></div>
+  <div class="row"><button id="bQuick" class="navb quick">🚀 Быстрая игра</button></div>
+  <label class="botchk"><input type="checkbox" id="chkBots" checked> Если никого нет, добавить ботов</label>
+  <div class="row"><button id="bBots" class="navb bots">🤖 С ботами</button><select id="botLvl"><option value="easy">Новичок</option><option value="mid" selected>Игрок</option><option value="hard">Мастер</option></select><select id="botN"><option>1</option><option selected>2</option><option>3</option></select></div>
+  <div class="row"><button id="bFr" class="navb">👥 Друзья <span id="frcnt" class="chip"></span></button></div>
   <div id="dq"></div>
   <button id="bOut" class="quit">Выйти из аккаунта</button>
+  <div id="foot">
+    <div>Поддержка: <a href="mailto:slovoboy.support@gmail.com">slovoboy.support@gmail.com</a></div>
+    <details><summary>💫 Поддержать автора</summary>
+      <div class="sub">Игра бесплатная. Если нравится, можно скинуть на развитие:</div>
+      <div class="wal"><b>SOL</b><code>HkX71UqD9ggRPwAjHzQMhXgEbxtPS7wWdbW42dRaxaCy</code><button class="copy alt" data-v="HkX71UqD9ggRPwAjHzQMhXgEbxtPS7wWdbW42dRaxaCy">Копировать</button></div>
+      <div class="wal"><b>ETH</b><code>0x86f91F8B1af8D2738d98824Cf882EAe8fAa6aB49</code><button class="copy alt" data-v="0x86f91F8B1af8D2738d98824Cf882EAe8fAa6aB49">Копировать</button></div>
+      <div class="wal"><b>BTC</b><code>bc1pgwml9xnvh4kn6gh0y3ar62vmsqk0hcauunhlp8xlzypg92enhpnsge592d</code><button class="copy alt" data-v="bc1pgwml9xnvh4kn6gh0y3ar62vmsqk0hcauunhlp8xlzypg92enhpnsge592d">Копировать</button></div>
+    </details>
+    <div><a href="/about">О игре</a> · <a href="/privacy">Конфиденциальность</a> · <a href="/terms">Условия</a></div>
+  </div>
 </section>
 <section id="nick" class="card hide center"><div class="sub" style="font-size:15px;opacity:.9">Придумай ник: его видят все игроки, он уникальный (2-16 символов: буквы, цифры, пробел, _ -)</div><input id="nickin" maxlength="16" autocomplete="off" style="margin:12px 0"><button id="bNickOk">Сохранить</button><button id="bNickCancel" class="quit hide">Отмена</button></section>
 <section id="settings" class="card hide center"><div id="setav" style="display:flex;justify-content:center;margin-bottom:12px"></div><input type="file" id="avfile" accept="image/*" class="hide"><div class="row" style="justify-content:center"><button id="bAvUp" class="alt">Загрузить аватарку</button><button id="bAvDel" class="quit" style="width:auto;margin:0">Удалить</button></div><div class="sub">Картинка сжимается до 128×128 и обрезается по центру</div><button id="bNick2" class="quit">Сменить ник</button><button id="bSetBack" class="quit">Назад</button></section>
@@ -234,11 +266,17 @@ const sfx = {
   t4() { tone(55, 1.4, 'sine', .5); tone(110, 1, 'sawtooth', .18, .05); [349, 415, 466, 622, 740, 932].forEach((f, i) => tone(f, .9, 'sawtooth', .09, .25 + i * .12)); [1568, 2093, 2637, 3136].forEach((f, i) => tone(f, .5, 'sine', .12, 1 + i * .1)); },
   win() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, .3, 'triangle', .22, i * .11)); }
 };
+function typingShow(m) {
+  let e = $('typing'); if (!e) { e = document.createElement('div'); e.id = 'typing'; document.body.append(e); }
+  e.textContent = '🤖 ' + m.name + ' печатает: ' + m.w + '▌'; e.style.display = 'block';
+  clearTimeout(e._t); e._t = setTimeout(() => { e.style.display = 'none'; }, 1600);
+}
+document.addEventListener('click', e => { const b = e.target.closest('.copy'); if (!b || !navigator.clipboard) return; navigator.clipboard.writeText(b.dataset.v).then(() => { b.textContent = '✓ Скопировано'; setTimeout(() => { b.textContent = 'Копировать'; }, 1400); }); });
 const NAV = { unread: 0 };
 function paintNav() {
   const on = FR.fr.filter(f => f.on).length;
   $('frcnt').textContent = FR.fr.length ? (on ? on + '/' : '') + FR.fr.length : '';
-  $('mailcnt').textContent = NAV.unread || '';
+  $('mailcnt').textContent = NAV.unread || ''; $('mailfab').classList.toggle('hide', !NICK);
 }
 function ago(t) { const s = (Date.now() - t) / 1000; return s < 60 ? 'только что' : s < 3600 ? Math.floor(s / 60) + ' мин назад' : s < 86400 ? Math.floor(s / 3600) + ' ч назад' : Math.floor(s / 86400) + ' дн назад'; }
 function showMail(m) {
@@ -272,7 +310,7 @@ function addFriendBtns(el) {
   if (!S) return; if (!frAsked) { frAsked = true; send({ t: 'friends_get' }); }
   const kids = [...el.children];
   S.players.forEach((p, i) => {
-    const d = kids[i]; if (!d || p.id === me) return;
+    const d = kids[i]; if (!d || p.id === me || p.bot) return;
     if (FR && FR.fr && FR.fr.some(f => f.nick === p.name)) { const bd = document.createElement('span'); bd.className = 'friendbadge'; bd.textContent = '✓'; bd.title = 'В друзьях'; d.append(bd); return; }
     const b = document.createElement('button'); b.className = 'addf'; b.textContent = '＋'; b.title = 'Добавить в друзья';
     b.onclick = e => { e.stopPropagation(); A(); send({ t: 'friend_add', nick: p.name }); b.disabled = true; b.textContent = '✓'; };
@@ -344,7 +382,7 @@ function plist0(el) {
     d.onclick = () => { A(); send({ t: 'profile', id: p.id }); };
     const l = document.createElement('span'); l.className = 'pn';
     const a = avEl(p.av, p.name, 30);
-    const n = document.createElement('span'); n.textContent = p.name + (p.id === S.host ? ' 👑' : '') + (p.id === me ? ' (ты)' : '') + (p.off ? ' 📴' : '');
+    const n = document.createElement('span'); n.textContent = (p.bot ? '🤖 ' : '') + p.name + (p.id === S.host ? ' 👑' : '') + (p.id === me ? ' (ты)' : '') + (p.off ? ' 📴' : '');
     l.append(a, n);
     const hh = document.createElement('span'); hh.textContent = S.phase === 'lobby' ? '' : '❤️'.repeat(Math.max(0, p.lives));
     d.append(l, hh); return d;
@@ -429,7 +467,8 @@ function onMsg(m) {
   else if (m.t === 'ach') { sfx.t3(); toast('🏆 Достижение: ' + m.name); }
   else if (m.t === 'rating') { ELO = m.elo; LG = m.lg; paintMe(); $('rtres').textContent = 'Рейтинг: ' + m.elo + ' (' + (m.d > 0 ? '+' : '') + m.d + ') · ' + m.lg; }
   else if (m.t === 'top') showTop(m.list);
-  else if (m.t === 'queued') show('queue');
+  else if (m.t === 'queued') { show('queue'); document.querySelector('#queue .sub').textContent = m.casual ? (m.bots ? 'Быстрая игра без рейтинга. Если за 12 секунд никого не найдём, добавим ботов.' : 'Быстрая игра без рейтинга: ищем игроков.') : 'Рейтинговая игра 1 на 1, режим «Слова». Допустимый разброс рейтинга растёт с ожиданием.'; }
+  else if (m.t === 'typing') typingShow(m);
   else if (m.t === 'unqueued') show('menu');
   else if (m.t === 'profile') showProfile(m);
   else if (m.t === 'ev') {
@@ -494,7 +533,7 @@ $('word').onkeydown = e => {
 function showProfile(m) {
   const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; };
   const ava = avEl(m.av, m.name, 72); ava.style.margin = '0';
-  const top0 = el('div'); top0.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px'; top0.append(ava); if (m.mine) { const ub = el('button', 'alt', '📷 Загрузить аву'); ub.style.cssText = 'width:auto;margin:0;font-size:14px;padding:8px 12px'; ub.onclick = () => $('avfile').click(); top0.append(ub); }
+  const top0 = el('div'); top0.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px'; top0.append(ava); if (m.mine) { const ub = el('button', 'alt', '📷 Загрузить аватарку'); ub.style.cssText = 'width:auto;margin:0;font-size:14px;padding:8px 12px'; ub.onclick = () => $('avfile').click(); top0.append(ub); }
   const kids = [top0, el('h2', '', m.name + (m.id === me || m.mine ? ' (ты)' : ''))];
   const g = el('div', 'grid');
   [['Игр', m.games], ['Побед', m.wins], ['Слов написано', m.total], ['Самое длинное', m.best ? m.best.toUpperCase() : '-'], ['Уровень', m.lv], ['Рейтинг', m.elo + ' · ' + m.lg]].forEach(([k, v]) => { const c = el('div', 'st'); c.append(el('b', '', v), el('span', '', k)); g.append(c); });
@@ -507,7 +546,8 @@ function showProfile(m) {
   m.ach.forEach(([n, u]) => { const sp = el('span', u ? 't3' : '', (u ? '🏆 ' : '🔒 ') + n); if (!u) sp.style.opacity = '.45'; al.append(sp); });
   kids.push(el('h3', '', 'Достижения ' + got + '/' + m.ach.length), al);
   if (m.myth && m.myth.length) { const hl = el('div', 'hist'); m.myth.forEach(w => hl.append(el('span', 't4', w))); kids.push(el('h3', '', 'Зал мифических слов'), hl); }
-  if (m.mine) { const sb = el('button', 'alt', '⚙ Ник и настройки'); sb.onclick = () => { $('modal').classList.add('hide'); show('settings'); }; kids.push(sb); }
+  if (m.mine) { const pb = el('button', 'pen', '✎'); pb.title = 'Сменить ник'; pb.onclick = () => { $('modal').classList.add('hide'); $('nickin').value = NICK; $('bNickCancel').classList.remove('hide'); show('nick'); }; kids[1].append(' ', pb); }
+  if (m.mine) { const sb = el('button', 'alt', '⚙ Настройки'); sb.onclick = () => { $('modal').classList.add('hide'); show('settings'); }; kids.push(sb); }
   if (!m.mine && m.id !== me && !(FR && FR.fr && FR.fr.some(f => f.nick === m.name))) { const fb = el('button', 'alt', '＋ Добавить в друзья'); fb.onclick = () => { send({ t: 'friend_add', nick: m.name }); fb.disabled = true; fb.textContent = 'Запрос отправлен'; }; kids.push(fb); } else if (!m.mine && m.id !== me) kids.push(el('div', 'friendbadge', '✓ В друзьях'));
   const x = el('button', 'quit', 'Закрыть'); x.onclick = () => $('modal').classList.add('hide'); kids.push(x);
   $('mbody').className = 'card' + (m.tiers[3] ? ' has4' : ''); $('mbody').replaceChildren(...kids); $('modal').classList.remove('hide');
@@ -578,10 +618,12 @@ $('avfile').onchange = async e => {
   } catch { toast('Не удалось обработать картинку', 1); }
 };
 $('bRated').onclick = () => { A(); send({ t: 'queue' }); };
+$('bQuick').onclick = () => { A(); send({ t: 'queue', casual: true, bots: $('chkBots').checked }); };
+$('bBots').onclick = () => { A(); send({ t: 'botgame', n: +$('botN').value, lvl: $('botLvl').value }); };
 $('bUnq').onclick = () => send({ t: 'unqueue' });
 $('bTop').onclick = () => send({ t: 'top' });
 $('bFr').onclick = () => show('friends');
-$('bMail').onclick = () => { A(); send({ t: 'mail_get' }); };
+$('mailfab').onclick = () => { A(); send({ t: 'mail_get' }); };
 $('bInvF').onclick = () => show('friends');
 $('bFBack').onclick = () => { if (S) render(); else show('menu'); };
 $('bFAdd').onclick = () => { send({ t: 'friend_add', nick: $('fnick').value }); $('fnick').value = ''; };
