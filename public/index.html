@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Unbounded:wght@500..900&display=swap" rel="stylesheet">
+<html lang="ru"><head><meta charset="utf-8"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080d1a'/%3E%3Ctext x='32' y='47' font-size='42' font-weight='900' text-anchor='middle' fill='%23ffb703' font-family='Arial Black,sans-serif'%3E%D0%A1%3C/text%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Unbounded:wght@500..900&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>СЛОВОБОЙ</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -98,6 +98,22 @@ h1{background:linear-gradient(100deg,#ffb703 20%,#fff1b8 45%,#ffb703 70%);backgr
 ::selection{background:#ffb70355}
 :focus-visible{outline:2px solid #ffb703;outline-offset:3px;border-radius:8px}
 *{scrollbar-width:thin;scrollbar-color:#2f4175 transparent}
+/* --- fixes v3 --- */
+h1{font-size:clamp(24px,8.2vw,46px);letter-spacing:.01em;white-space:nowrap;padding:0 .12em;overflow:visible}
+#toast{top:calc(64px + env(safe-area-inset-top,0px));z-index:12;transform:translate(-50%,-220%);opacity:0;pointer-events:none;width:max-content;max-width:calc(100vw - 24px);font-size:15px;line-height:1.3;overflow-wrap:anywhere;transition:transform .45s cubic-bezier(.22,1,.36,1),opacity .3s}
+#toast.show{transform:translate(-50%,0);opacity:1}
+.addf{width:auto;margin:0 0 0 auto;padding:2px 10px;font-size:16px;line-height:1.3;box-shadow:none;flex:none}
+.ov{position:fixed;inset:0;z-index:7;pointer-events:none;opacity:0}
+.ov.ice{background:radial-gradient(circle at 50% 40%,#bff3ff44,#3aa8ff33 60%,#0000);box-shadow:inset 0 0 130px #7fd8ff;animation:ovfade 1.5s ease-out forwards}
+.ov.skip{background:repeating-linear-gradient(90deg,#ffb70000 0 36px,#ffb70026 36px 40px);animation:ovfade .8s ease-out forwards}
+.ov.win{background:radial-gradient(circle,#2ee6a633,#0000 70%);box-shadow:inset 0 0 140px #2ee6a6;animation:ovfade 2.1s ease-out forwards}
+.ov.lose{background:radial-gradient(circle,#ff244222,#00000066);box-shadow:inset 0 0 160px #ff2442;animation:ovfade 2.5s ease-out forwards}
+@keyframes ovfade{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+body.slide section{animation:slideaway .8s cubic-bezier(.4,0,.2,1)}
+@keyframes slideaway{0%{transform:translateX(0)}40%{transform:translateX(-7vw);opacity:.6}100%{transform:translateX(0)}}
+#over.won{border-color:#2ee6a6;box-shadow:0 0 0 1px #000,0 0 50px #2ee6a655}
+#over.lost{border-color:#ff4d6d;box-shadow:0 0 0 1px #000,0 0 50px #ff4d6d55}
+#over.lost #win{color:#ff4d6d}
 </style></head><body>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">🔊</button><button id="trk" title="Сменить музыку">🎵</button>
 <main>
@@ -109,6 +125,7 @@ h1{background:linear-gradient(100deg,#ffb703 20%,#fff1b8 45%,#ffb703 70%);backgr
   <div class="row"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div>
   <div class="row"><button id="bRated">⚔️ Рейтинговая игра</button><button id="bTop" class="quit" style="width:auto;margin:0">🏆</button></div>
   <div id="rtxt" class="sub"></div>
+  <div class="row"><button id="bMyProf" class="alt">👤 Мой профиль</button></div>
   <div class="row"><button id="bFr" class="alt">👥 Друзья</button></div>
   <div id="dq"></div>
   <button id="bOut" class="quit">Выйти из аккаунта</button>
@@ -205,6 +222,38 @@ const sfx = {
   t4() { tone(55, 1.4, 'sine', .5); tone(110, 1, 'sawtooth', .18, .05); [349, 415, 466, 622, 740, 932].forEach((f, i) => tone(f, .9, 'sawtooth', .09, .25 + i * .12)); [1568, 2093, 2637, 3136].forEach((f, i) => tone(f, .5, 'sine', .12, 1 + i * .1)); },
   win() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, .3, 'triangle', .22, i * .11)); }
 };
+let frAsked = false;
+function addFriendBtns(el) {
+  if (!S) return; if (!FR && !frAsked) { frAsked = true; send({ t: 'friends_get' }); }
+  const kids = [...el.children];
+  S.players.forEach((p, i) => {
+    const d = kids[i]; if (!d || p.id === me) return;
+    if (FR && FR.fr && FR.fr.some(f => f.nick === p.name)) return;
+    const b = document.createElement('button'); b.className = 'addf'; b.textContent = '＋'; b.title = 'Добавить в друзья';
+    b.onclick = e => { e.stopPropagation(); A(); send({ t: 'friend_add', nick: p.name }); b.disabled = true; b.textContent = '✓'; };
+    d.append(b);
+  });
+}
+sfx.freeze = () => { [1568, 2093, 2637, 3136, 3951].forEach((f, i) => tone(f, .55, 'sine', .11, i * .05)); tone(880, 1.2, 'triangle', .07); };
+sfx.skip = () => {
+  if (!ac) return; const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'sawtooth'; o.frequency.setValueAtTime(1400, t); o.frequency.exponentialRampToValueAtTime(180, t + .35);
+  g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.1, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .4);
+  o.connect(g); g.connect(sg); o.start(t); o.stop(t + .42); tone(660, .15, 'triangle', .15, .38); tone(990, .2, 'triangle', .15, .46);
+};
+sfx.lose = () => { [392, 330, 262, 196].forEach((f, i) => tone(f, .5, 'triangle', .16, i * .18)); tone(98, 1.3, 'sine', .25, .3); };
+function ov(cls, ms) { const o = document.createElement('div'); o.className = 'ov ' + cls; document.body.append(o); setTimeout(() => o.remove(), ms); }
+function boostFx(b) {
+  if (b === 'freeze') { sfx.freeze(); centerBurst('#9be7ff', 50); ov('ice', 1500); }
+  else { sfx.skip(); ov('skip', 800); document.body.classList.add('slide'); setTimeout(() => document.body.classList.remove('slide'), 800); }
+}
+function overFx() {
+  const mm = S && S.players.find(p => p.id === me), won = !!(mm && S.winner && mm.name === S.winner);
+  if (won) { sfx.win(); ov('win', 2100); for (let i = 0; i < 6; i++) setTimeout(() => burst(Math.random() * W, H * .3 + Math.random() * H * .3, ['#2ee6a6', '#7dffcf', '#ffb703'][i % 3], 60), i * 220); }
+  else { sfx.lose(); ov('lose', 2500); for (let i = 0; i < 4; i++) setTimeout(() => burst(Math.random() * W, H * .3 + Math.random() * H * .3, ['#ff4d6d', '#ff2442'][i % 2], 50), i * 260); }
+}
+const firstGo = () => { A(); ['pointerdown', 'touchend', 'keydown', 'click'].forEach(e => removeEventListener(e, firstGo, true)); };
+['pointerdown', 'touchend', 'keydown', 'click'].forEach(e => addEventListener(e, firstGo, true));
 $('trk').onclick = () => nextTrack();
 $('snd').onclick = () => { A(); musicOn = !musicOn; $('snd').textContent = musicOn ? '🔊' : '🔇'; };
 
@@ -240,7 +289,8 @@ function show(id) {
   ['login', 'nick', 'settings', 'friends', 'queue', 'menu', 'lobby', 'game', 'over'].forEach(s => $(s).classList.toggle('hide', s !== id));
   if (id === 'login') $('lmsg').textContent = !GID ? 'На сервере не задан GOOGLE_CLIENT_ID' : LS.get('sb_sess') ? 'Подключаюсь к серверу, это может занять до минуты...' : '';
 }
-function plist(el) {
+function plist(el) { plist0(el); addFriendBtns(el); }
+function plist0(el) {
   el.replaceChildren(...S.players.map(p => {
     const d = document.createElement('div');
     d.className = 'pl' + (p.id === S.turn ? ' turn' : '') + (p.alive ? '' : ' dead') + (p.off ? ' off' : '');
@@ -340,10 +390,10 @@ function onMsg(m) {
     else if (m.k === 'left') { sfx.out(); toast(m.name + ' вышел', 1); }
     else if (m.k === 'off') toast(m.name + ' отключился, ждем его до 90 секунд', 1);
     else if (m.k === 'back') toast(m.name + ' вернулся');
-    else if (m.k === 'boost') { sfx.t1(); toast(m.name + (m.b === 'freeze' ? ' заморозил время на 10 секунд' : ' пропустил ход')); }
+    else if (m.k === 'boost') { boostFx(m.b); toast(m.name + (m.b === 'freeze' ? ' заморозил время на 10 секунд' : ' пропустил ход')); }
     else if (m.k === 'react') floatEmoji(m.name, m.e);
     else if (m.k === 'start') { sfx.start(); $('rtres').textContent = ''; }
-    else if (m.k === 'over') { sfx.win(); for (let i = 0; i < 6; i++) setTimeout(() => burst(Math.random() * W, H * .3 + Math.random() * H * .3, ['#ffb703', '#2ee6a6', '#ff4d6d'][i % 3], 60), i * 220); }
+    else if (m.k === 'over') setTimeout(overFx, 250);
   }
   else if (m.t === 'state') { S = m; setRM(m.code); tLeft = m.left; tAt = performance.now(); lastTick = -1; render(); }
 }
@@ -363,7 +413,7 @@ function render() {
     plist($('gp'));
     $('hist').replaceChildren(...S.hist.map(h => { const s = document.createElement('span'); s.textContent = h.w; if (h.t) s.className = 't' + h.t; return s; }));
   } else {
-    show('over'); $('win').textContent = S.winner || 'Ничья'; $('note').textContent = S.note ? 'Игрок ' + S.note + '. Авто-победа!' : ''; plist($('op'));
+    show('over'); { const mm = S.players.find(p => p.id === me), won = !!(mm && S.winner && mm.name === S.winner); $('over').classList.toggle('won', won); $('over').classList.toggle('lost', !won); } $('win').textContent = S.winner || 'Ничья'; $('note').textContent = S.note ? 'Игрок ' + S.note + '. Авто-победа!' : ''; plist($('op'));
     const host = S.host === me; $('bAgain').classList.toggle('hide', !host || S.rated); $('owait').textContent = host ? '' : 'Ждем решения хоста';
   }
 }
@@ -396,18 +446,19 @@ $('word').onkeydown = e => {
 function showProfile(m) {
   const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; };
   const ava = avEl(m.av, m.name, 72); ava.style.margin = '0 auto 8px';
-  const kids = [ava, el('h2', '', m.name + (m.id === me ? ' (ты)' : ''))];
+  const kids = [ava, el('h2', '', m.name + (m.id === me || m.mine ? ' (ты)' : ''))];
   const g = el('div', 'grid');
   [['Игр', m.games], ['Побед', m.wins], ['Слов написано', m.total], ['Самое длинное', m.best ? m.best.toUpperCase() : '-'], ['Уровень', m.lv], ['Рейтинг', m.elo + ' · ' + m.lg]].forEach(([k, v]) => { const c = el('div', 'st'); c.append(el('b', '', v), el('span', '', k)); g.append(c); });
   const tg = el('div', 'grid g4');
   [1, 2, 3, 4].forEach(i => { const c = el('div', 'st' + (i === 4 ? ' myth' : '')); c.style.color = TIERS[i].c; c.style.borderColor = TIERS[i].c; c.append(el('b', '', m.tiers[i - 1]), el('span', '', TIERS[i].n)); tg.append(c); });
   const tl = el('div', 'hist'); if (!m.top.length) tl.append(el('span', '', 'Пока пусто'));
   m.top.forEach(([w, c, t]) => tl.append(el('span', t ? 't' + t : '', w + ' x' + c)));
-  kids.push(g, tg, el('h3', '', 'Любимые слова'), tl);
+  kids.push(g, ...(m.reg ? [el('div', 'sub', 'В игре с ' + new Date(m.reg).toLocaleDateString('ru-RU'))] : []), tg, el('h3', '', 'Любимые слова'), tl);
   const got = m.ach.filter(a => a[1]).length, al = el('div', 'hist');
   m.ach.forEach(([n, u]) => { const sp = el('span', u ? 't3' : '', (u ? '🏆 ' : '🔒 ') + n); if (!u) sp.style.opacity = '.45'; al.append(sp); });
   kids.push(el('h3', '', 'Достижения ' + got + '/' + m.ach.length), al);
   if (m.myth && m.myth.length) { const hl = el('div', 'hist'); m.myth.forEach(w => hl.append(el('span', 't4', w))); kids.push(el('h3', '', 'Зал мифических слов'), hl); }
+  if (!m.mine && m.id !== me && !(FR && FR.fr && FR.fr.some(f => f.nick === m.name))) { const fb = el('button', 'alt', '＋ Добавить в друзья'); fb.onclick = () => { send({ t: 'friend_add', nick: m.name }); fb.disabled = true; fb.textContent = 'Запрос отправлен'; }; kids.push(fb); }
   const x = el('button', 'quit', 'Закрыть'); x.onclick = () => $('modal').classList.add('hide'); kids.push(x);
   $('mbody').className = 'card' + (m.tiers[3] ? ' has4' : ''); $('mbody').replaceChildren(...kids); $('modal').classList.remove('hide');
 }
@@ -480,6 +531,7 @@ $('bRated').onclick = () => { A(); send({ t: 'queue' }); };
 $('bUnq').onclick = () => send({ t: 'unqueue' });
 $('bTop').onclick = () => send({ t: 'top' });
 $('bFr').onclick = () => show('friends');
+$('bMyProf').onclick = () => { A(); send({ t: 'myprofile' }); };
 $('bInvF').onclick = () => show('friends');
 $('bFBack').onclick = () => { if (S) render(); else show('menu'); };
 $('bFAdd').onclick = () => { send({ t: 'friend_add', nick: $('fnick').value }); $('fnick').value = ''; };
