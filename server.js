@@ -94,7 +94,7 @@ async function getProfile(key) {
   try { p = raw ? JSON.parse(raw) : null; } catch { p = null; }
   p = p || { name: '', games: 0, wins: 0, total: 0, t: [0, 0, 0, 0], m: [], w: {}, best: '' };
   p.nick = p.nick || ''; p.bo = p.bo || { f: 0, s: 0 };
-  p.fr = p.fr || []; p.rq = p.rq || []; p.ac = p.ac || []; p.qd = p.qd || 0; p.rg = p.rg || 0; p.elo = p.elo ?? 800; p.av = p.av || ''; p.avv = p.avv || 0;
+  p.fr = p.fr || []; p.rq = p.rq || []; p.ac = p.ac || []; p.qd = p.qd || 0; p.rg = p.rg || 0; p.elo = p.elo ?? 800; p.av = p.av || ''; p.avv = p.avv || 0; p.reg = p.reg || Date.now();
   if (p.nick) nicks.set(p.nick.toLowerCase(), key);
   while (p.t.length < 4) p.t.push(0);
   p.m = p.m || [];
@@ -492,6 +492,11 @@ function dropKey(key, except) {
 
 async function handle(ws, m) {
   const c = ws.ctx;
+  if (m.t === 'myprofile') { // свой профиль из меню, без комнаты
+    if (!c.key) return;
+    const f = await getProfile(c.key), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+  }
   if (m.t === 'auth') {
     if (!hit(authRate, c.ip, 20, 60000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди минуту' });
     let key = null, sess = null, nick = '';
@@ -622,7 +627,7 @@ async function handle(ws, m) {
   if (m.t === 'profile') {
     const x = r.players.find(y => y.id === m.id); if (!x) return;
     const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'start' || m.t === 'again') {
     if (p.id !== r.hostId || r.rated) return;
