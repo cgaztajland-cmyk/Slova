@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080d1a'/%3E%3Ctext x='32' y='47' font-size='42' font-weight='900' text-anchor='middle' fill='%23ffb703' font-family='Arial Black,sans-serif'%3E%D0%A1%3C/text%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400..800&family=Manrope:wght@400..800&family=Unbounded:wght@500..900&display=swap" rel="stylesheet">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080d1a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>СЛОВОБОЙ</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -144,6 +144,29 @@ background-image:radial-gradient(1.4px 1.4px at 8% 14%,#fff,#0000),radial-gradie
 .wal{display:flex;align-items:center;gap:8px;margin:8px 0;text-align:left}.wal b{width:34px}
 .wal code{flex:1;min-width:0;word-break:break-all;font-size:11px;background:#0b1430;padding:6px 8px;border-radius:8px}
 .wal button{width:auto;margin:0;padding:6px 10px;font-size:12px}
+/* --- menu v6 + mobile app feel --- */
+html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}button{touch-action:manipulation}body{overscroll-behavior-y:none}
+#bPlay{font-family:'Unbounded','Exo 2',sans-serif;font-size:22px;letter-spacing:.05em;padding:20px;background:linear-gradient(135deg,#ffb703,#ff8a3d);color:#2a1600;box-shadow:0 6px 0 #b3560f,0 14px 40px #ff8a3d55;animation:glow 3.2s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 6px 0 #b3560f,0 14px 56px #ffb703aa}}
+.mode{background:#0b1430aa;border:1px solid #2f4175;border-left:4px solid #3a86ff;border-radius:18px;padding:14px;margin:10px 0}
+.mode.b{border-left-color:#ff5fa2}.mode.r{border-left-color:#ffb703}.mode.f{border-left-color:#2ee6a6}
+.mode h3{margin:0 0 4px;font-size:16px}.mode p{margin:0 0 10px;font-size:13px;opacity:.8}.mode .row{margin-top:8px}.mode>button{margin-top:0}
+.gquit{width:auto;margin:0 0 10px;padding:8px 14px;font-size:14px}
+@media (max-width:640px){
+  main{max-width:none;padding:calc(66px + env(safe-area-inset-top)) 12px calc(18px + env(safe-area-inset-bottom));min-height:100vh;justify-content:flex-start;gap:12px}
+  @supports (min-height:100dvh){main{min-height:100dvh}}
+  #mailfab,#snd,#trk{top:calc(10px + env(safe-area-inset-top))}
+  #toast{top:calc(64px + env(safe-area-inset-top))}
+  h1{margin:0}
+  .card{padding:16px;border-radius:22px}
+  button{min-height:50px;font-size:16px;border-radius:16px}
+  input,select{min-height:50px;font-size:16px}
+  #bPlay{min-height:68px;font-size:20px}
+  #word{font-size:22px}
+  .mode{padding:12px}
+  #foot{padding-bottom:6px}
+}
+@media (max-width:640px) and (max-height:620px){main{padding-top:calc(58px + env(safe-area-inset-top))}.card{padding:12px}}
 </style></head><body><button id="mailfab" class="hide" title="Почта">✉<span id="mailcnt" class="chip hot"></span></button>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">🔊</button><button id="trk" title="Сменить музыку">🎵</button>
 <main>
@@ -153,13 +176,8 @@ background-image:radial-gradient(1.4px 1.4px at 8% 14%,#fff,#0000),radial-gradie
   <div class="row" style="margin:0 0 12px;align-items:center"><div id="myav"></div><div id="who" style="flex:1;font-weight:800"></div><button id="bNick" class="quit" style="margin:0;width:auto">Профиль</button></div>
   <div id="lvbar"><div id="lvfill"></div></div><div id="lvtxt" class="sub" style="margin:0 0 4px"></div>
   <details class="sub lvhelp"><summary>Как растёт уровень?</summary>+1 XP за каждое слово, +10 за победу, +20 за выполненное задание дня. Каждые 100 XP — новый уровень. Игры с ботами опыт за победы не дают.</details>
-  <div class="row"><button id="bCreate">Создать комнату</button></div>
-  <div class="row"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div>
-  <div class="row"><button id="bRated">⚔️ Рейтинговая игра</button><button id="bTop" class="quit" style="width:auto;margin:0">🏆</button></div>
-  <div id="rtxt" class="sub"></div>
-  <div class="row"><button id="bQuick" class="navb quick">🚀 Быстрая игра</button></div>
-  <label class="botchk"><input type="checkbox" id="chkBots" checked> Если никого нет, добавить ботов</label>
-  <div class="row"><button id="bBots" class="navb bots">🤖 С ботами</button><select id="botLvl"><option value="easy">Новичок</option><option value="mid" selected>Игрок</option><option value="hard">Мастер</option></select><select id="botN"><option>1</option><option selected>2</option><option>3</option></select></div>
+  <button id="bPlay">▶ ИГРАТЬ</button>
+  <div id="rtxt0" class="sub" style="text-align:center">Выбери режим и вперёд</div>
   <div class="row"><button id="bFr" class="navb">👥 Друзья <span id="frcnt" class="chip"></span></button></div>
   <div id="dq"></div>
   <button id="bOut" class="quit">Выйти из аккаунта</button>
@@ -177,6 +195,13 @@ background-image:radial-gradient(1.4px 1.4px at 8% 14%,#fff,#0000),radial-gradie
 <section id="nick" class="card hide center"><div class="sub" style="font-size:15px;opacity:.9">Придумай ник: его видят все игроки, он уникальный (2-16 символов: буквы, цифры, пробел, _ -)</div><input id="nickin" maxlength="16" autocomplete="off" style="margin:12px 0"><button id="bNickOk">Сохранить</button><button id="bNickCancel" class="quit hide">Отмена</button></section>
 <section id="settings" class="card hide center"><div id="setav" style="display:flex;justify-content:center;margin-bottom:12px"></div><input type="file" id="avfile" accept="image/*" class="hide"><div class="row" style="justify-content:center"><button id="bAvUp" class="alt">Загрузить аватарку</button><button id="bAvDel" class="quit" style="width:auto;margin:0">Удалить</button></div><div class="sub">Картинка сжимается до 128×128 и обрезается по центру</div><button id="bNick2" class="quit">Сменить ник</button><button id="bSetBack" class="quit">Назад</button></section>
 <section id="friends" class="card hide"><div class="row" style="margin:0"><input id="fnick" maxlength="16" placeholder="Ник друга" autocomplete="off"><button id="bFAdd" class="alt">Добавить</button></div><div id="frq" class="pls"></div><div id="flist" class="pls"></div><button id="bFBack" class="quit">Назад</button></section>
+<section id="play" class="card hide">
+  <div class="row" style="margin:0 0 6px;align-items:center"><button id="bPlayBack" class="quit" style="width:auto;margin:0">← Назад</button><div style="flex:1;text-align:right;font-weight:800">Выбери режим</div></div>
+  <div class="mode q"><h3>🚀 Быстрая игра</h3><p>Без рейтинга. Ищем живых соперников; если за 12 секунд никого нет, подключим ботов.</p><button id="bQuick" class="navb quick">Играть</button></div>
+  <div class="mode b"><h3>🤖 Против ботов</h3><p>Тренировка в любое время. Выбери сложность и число соперников.</p><div class="row"><select id="botLvl"><option value="easy">Новичок</option><option value="mid" selected>Игрок</option><option value="hard">Мастер</option></select><select id="botN"><option>1</option><option selected>2</option><option>3</option></select><button id="bBots" class="navb bots">Играть</button></div></div>
+  <div class="mode r"><h3>⚔️ Рейтинговая</h3><p>1 на 1, влияет на рейтинг и лигу.</p><div id="rtxt" class="sub"></div><div class="row"><button id="bRated">Искать соперника</button><button id="bTop" class="quit" style="width:auto;margin:0">🏆</button></div></div>
+  <div class="mode f"><h3>👥 С друзьями</h3><p>Создай комнату и отправь код или позови друзей из списка.</p><button id="bCreate">Создать комнату</button><div class="row"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div></div>
+</section>
 <section id="queue" class="card hide center"><div style="font-size:20px;font-weight:800;margin-bottom:6px">Ищем соперника...</div><div class="sub">Рейтинговая игра 1 на 1, режим «Слова». Допустимый разброс рейтинга растет с ожиданием.</div><button id="bUnq" class="quit">Отмена</button></section>
 <section id="lobby" class="card hide">
   <div class="sub">Код комнаты, нажми чтобы скопировать</div><div id="rcode" class="code"></div>
@@ -185,6 +210,7 @@ background-image:radial-gradient(1.4px 1.4px at 8% 14%,#fff,#0000),radial-gradie
   <button id="bStart">Начать игру</button><button id="bInvF" class="alt" style="margin-top:10px">👥 Позвать друзей</button><button id="bQuit" class="quit">Выйти из комнаты</button><div id="wait" class="sub"></div>
 </section>
 <section id="game" class="hide">
+  <button id="bQuitG" class="quit gquit">✕ Выйти</button>
   <div class="card center" id="gcard">
     <div class="rb" id="rb"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle id="ring" class="rg" cx="100" cy="100" r="90"/></svg><div id="letter">?</div><div id="sec"></div></div>
     <div id="hint" class="sub"></div>
@@ -370,7 +396,7 @@ function show(id) {
   if (id === 'menu' && AUTH) send({ t: 'dqget' });
   if (id === 'friends') send({ t: 'friends_get' });
   if (id === 'menu') send({ t: 'mystat' });
-  ['login', 'nick', 'settings', 'friends', 'queue', 'menu', 'lobby', 'game', 'over'].forEach(s => $(s).classList.toggle('hide', s !== id));
+  ['login', 'nick', 'settings', 'friends', 'queue', 'play', 'menu', 'lobby', 'game', 'over'].forEach(s => $(s).classList.toggle('hide', s !== id));
   if (id === 'login') $('lmsg').textContent = !GID ? 'На сервере не задан GOOGLE_CLIENT_ID' : LS.get('sb_sess') ? 'Подключаюсь к серверу, это может занять до минуты...' : '';
 }
 function plist(el) { plist0(el); addFriendBtns(el); }
@@ -618,7 +644,10 @@ $('avfile').onchange = async e => {
   } catch { toast('Не удалось обработать картинку', 1); }
 };
 $('bRated').onclick = () => { A(); send({ t: 'queue' }); };
-$('bQuick').onclick = () => { A(); send({ t: 'queue', casual: true, bots: $('chkBots').checked }); };
+$('bQuitG').onclick = () => { if (confirm('Выйти из игры? Это будет считаться поражением.')) $('bQuit').click(); };
+$('bPlay').onclick = () => { A(); show('play'); };
+$('bPlayBack').onclick = () => show('menu');
+$('bQuick').onclick = () => { A(); send({ t: 'queue', casual: true, bots: true }); };
 $('bBots').onclick = () => { A(); send({ t: 'botgame', n: +$('botN').value, lvl: $('botLvl').value }); };
 $('bUnq').onclick = () => send({ t: 'unqueue' });
 $('bTop').onclick = () => send({ t: 'top' });
