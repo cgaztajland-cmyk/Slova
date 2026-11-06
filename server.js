@@ -94,7 +94,7 @@ async function getProfile(key) {
   try { p = raw ? JSON.parse(raw) : null; } catch { p = null; }
   p = p || { name: '', games: 0, wins: 0, total: 0, t: [0, 0, 0, 0], m: [], w: {}, best: '' };
   p.nick = p.nick || ''; p.bo = p.bo || { f: 0, s: 0 };
-  p.fr = p.fr || []; p.rq = p.rq || []; p.ac = p.ac || []; p.qd = p.qd || 0; p.rg = p.rg || 0; p.elo = p.elo ?? 800; p.av = p.av || ''; p.avv = p.avv || 0; p.reg = p.reg || Date.now();
+  p.fr = p.fr || []; p.rq = p.rq || []; p.ac = p.ac || []; p.qd = p.qd || 0; p.rg = p.rg || 0; p.elo = p.elo ?? 800; p.av = p.av || ''; p.avv = p.avv || 0; p.reg = p.reg || Date.now(); p.mail = p.mail || []; p.mseen = p.mseen || 0;
   if (p.nick) nicks.set(p.nick.toLowerCase(), key);
   while (p.t.length < 4) p.t.push(0);
   p.m = p.m || [];
@@ -157,10 +157,11 @@ const ACH = [
   ['rt1', 'Первая рейтинговая игра', f => f.rg >= 1], ['pl', 'Платиновая лига', f => f.elo >= 1300], ['fr1', 'Первый друг', f => f.fr.length >= 1],
   ['av', 'Своя аватарка', f => !!f.av]
 ];
+function mailAdd(f, k, x) { f.mail = f.mail || []; f.mail.unshift({ t: Date.now(), k, x }); if (f.mail.length > 25) f.mail.length = 25; }
 function checkAch(key) {
   const f = profiles.get(key); if (!f) return;
   const nw = [];
-  for (const [id, name, fn] of ACH) if (!f.ac.includes(id) && fn(f)) { f.ac.push(id); nw.push(name); }
+  for (const [id, name, fn] of ACH) if (!f.ac.includes(id) && fn(f)) { f.ac.push(id); nw.push(name); mailAdd(f, 'ach', name); }
   if (nw.length) { dirty.add(key); nw.forEach(n => tellKey(key, { t: 'ach', name: n })); }
 }
 
@@ -230,7 +231,7 @@ function present(key) {
 async function friendView(prof) {
   const fr = [], rq = [];
   for (const k of prof.fr) { const f = await getProfile(k); fr.push(Object.assign({ nick: f.nick, av: avUrl(f), lg: leagueOf(f.elo) }, present(k))); }
-  for (const k of prof.rq) { const f = await getProfile(k); rq.push({ nick: f.nick, av: avUrl(f) }); }
+  for (const k of prof.rq) { const f = await getProfile(k); rq.push({ nick: f.nick, av: avUrl(f), lv: levelOf(f), lg: leagueOf(f.elo) }); }
   return { t: 'friends', fr, rq };
 }
 function link(a, b, ka, kb) {
@@ -253,7 +254,7 @@ async function friendsMsg(ws, m) {
     if (tk === key) return send(ws, { t: 'err', msg: 'Это ты сам' });
     if (prof.fr.includes(tk)) return send(ws, { t: 'err', msg: 'Он уже у тебя в друзьях' });
     if (prof.fr.length >= 50) return send(ws, { t: 'err', msg: 'Максимум 50 друзей' });
-    if (prof.rq.includes(tk)) { link(prof, tp, key, tk); send(ws, { t: 'info', msg: 'Теперь вы друзья' }); return view(); }
+    if (prof.rq.includes(tk)) { link(prof, tp, key, tk); mailAdd(tp, 'friend', prof.nick); send(ws, { t: 'info', msg: 'Теперь вы друзья' }); return view(); }
     if (!tp.rq.includes(key)) {
       if (tp.rq.length >= 30) return send(ws, { t: 'err', msg: 'У игрока слишком много заявок' });
       tp.rq.push(key); dirty.add(tk); tellKey(tk, { t: 'frq', nick: prof.nick });
@@ -263,7 +264,7 @@ async function friendsMsg(ws, m) {
   if (m.t === 'friend_resp') {
     if (!prof.rq.includes(tk)) return;
     prof.rq = prof.rq.filter(x => x !== tk); dirty.add(key);
-    if (m.ok && prof.fr.length < 50 && tp.fr.length < 50) { link(prof, tp, key, tk); tellKey(tk, { t: 'info', msg: prof.nick + ' принял заявку в друзья' }); }
+    if (m.ok && prof.fr.length < 50 && tp.fr.length < 50) { link(prof, tp, key, tk); mailAdd(tp, 'friend', prof.nick); tellKey(tk, { t: 'info', msg: prof.nick + ' принял заявку в друзья' }); }
     return view();
   }
   if (m.t === 'friend_del') { prof.fr = prof.fr.filter(x => x !== tk); tp.fr = tp.fr.filter(x => x !== key); dirty.add(key); dirty.add(tk); return view(); }
@@ -310,7 +311,7 @@ function qEvent(p, e) {
     const d = QPOOL.find(x => x.id === id);
     if (!d.ev(e)) return;
     changed = true; dq.p[i]++;
-    if (dq.p[i] >= d.target) { dq.done[i] = 1; newly.push(i); if (f.bo[d.r] < 5) f.bo[d.r]++; }
+    if (dq.p[i] >= d.target) { dq.done[i] = 1; newly.push(i); if (f.bo[d.r] < 5) f.bo[d.r]++; mailAdd(f, 'quest', d.text + '|' + d.r); }
   });
   if (!changed) return;
   dirty.add(p.key);
@@ -492,10 +493,22 @@ function dropKey(key, except) {
 
 async function handle(ws, m) {
   const c = ws.ctx;
+  if (m.t === 'mystat') {
+    if (!c.key) return;
+    const f = await getProfile(c.key), xp = xpOf(f), lv = levelOf(f);
+    return send(ws, { t: 'mystat', lv, xp, a: 25 * (lv - 1) ** 2, b: 25 * lv ** 2, frc: f.fr.length, unread: f.mail.filter(x => x.t > f.mseen).length + f.rq.length });
+  }
+  if (m.t === 'mail_get') {
+    if (!c.key) return;
+    const f = await getProfile(c.key), seen = f.mseen, fv = await friendView(f);
+    const items = f.mail.map(x => ({ t: x.t, k: x.k, x: x.x, n: x.t > seen ? 1 : 0 }));
+    f.mseen = Date.now(); dirty.add(c.key);
+    return send(ws, { t: 'mail', items, rq: fv.rq });
+  }
   if (m.t === 'myprofile') { // свой профиль из меню, без комнаты
     if (!c.key) return;
     const f = await getProfile(c.key), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'auth') {
     if (!hit(authRate, c.ip, 20, 60000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди минуту' });
@@ -627,7 +640,7 @@ async function handle(ws, m) {
   if (m.t === 'profile') {
     const x = r.players.find(y => y.id === m.id); if (!x) return;
     const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'start' || m.t === 'again') {
     if (p.id !== r.hostId || r.rated) return;
