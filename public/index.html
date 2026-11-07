@@ -212,6 +212,45 @@ html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}but
 .sq{flex:none;width:54px;min-height:54px;margin:0;padding:0;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.07)!important;color:#ffc233!important;box-shadow:none!important;border:1px solid rgba(255,194,51,.35)}
 .sq .ic{width:24px;height:24px}
 .mode input{min-height:50px}
+/* --- v9: карусель режимов, списки, эффекты слов --- */
+#tools #mailfab{top:auto!important;right:auto!important;left:auto!important;bottom:auto!important}
+.ptabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:2px 0 10px}
+.ptab{flex:none;width:auto;min-height:38px!important;margin:0;padding:6px 14px;border-radius:999px;font-size:13.5px!important;font-weight:700;background:rgba(255,255,255,.06)!important;color:#a9b8e6!important;box-shadow:none!important;border:1px solid rgba(120,150,255,.2);transition:background .25s,color .25s}
+.ptab.on{background:rgba(255,255,255,.16)!important;color:#fff!important;border-color:rgba(255,255,255,.4)}
+.deck{position:relative;display:flex;align-items:flex-start;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px;margin:0 -4px;overscroll-behavior-x:contain}
+.deck::-webkit-scrollbar,.ptabs::-webkit-scrollbar{display:none}
+.deck .mode{flex:0 0 92%;scroll-snap-align:start;margin:0;box-sizing:border-box}
+.dots{display:flex;justify-content:center;gap:8px;margin:12px 0 2px}
+.dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22);transition:width .3s,background .3s;cursor:pointer}
+.dots i.on{width:22px;border-radius:99px;background:#ffc233}
+.seg.wrap{flex-wrap:wrap}.seg.wrap button{flex:1 1 30%}
+.seg.locked button{opacity:.55;pointer-events:none}
+#modeseg{margin-top:8px}
+/* эффекты редких слов */
+.tfx{position:fixed;inset:0;z-index:11;pointer-events:none;display:grid;place-items:center;overflow:hidden;animation:tfxlife 3.4s ease both}
+.tfx.t4{animation-duration:4.6s}
+@keyframes tfxlife{0%,80%{opacity:1}100%{opacity:0}}
+.tfx .glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,rgba(var(--cr),.34),transparent 62%);animation:glowin 3s ease both}
+@keyframes glowin{0%{opacity:0}25%{opacity:1}100%{opacity:.5}}
+.tfx .rays{position:absolute;left:50%;top:46%;width:150vmax;height:150vmax;transform:translate(-50%,-50%);background:repeating-conic-gradient(from 0deg,rgba(var(--cr),0) 0 8deg,rgba(var(--cr),.16) 8deg 11deg);-webkit-mask-image:radial-gradient(circle,#000 0,transparent 55%);mask-image:radial-gradient(circle,#000 0,transparent 55%);animation:spin 16s linear infinite}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.tfx .aur{position:absolute;inset:-12%;background:linear-gradient(115deg,rgba(255,36,66,0),rgba(255,36,66,.30),rgba(138,92,255,.30),rgba(58,134,255,.20),rgba(255,36,66,0));background-size:300% 300%;filter:blur(46px);animation:aurmove 4.6s ease-in-out both}
+@keyframes aurmove{0%{background-position:0% 50%;opacity:0}30%{opacity:1}100%{background-position:100% 50%;opacity:.2}}
+.tfx .ring{position:absolute;left:50%;top:46%;width:22vmin;height:22vmin;border-radius:50%;border:2px solid rgba(var(--cr),.75);transform:translate(-50%,-50%) scale(.2);opacity:0;animation:ringout 2.4s ease-out both;animation-delay:var(--d,0s)}
+@keyframes ringout{0%{opacity:.9;transform:translate(-50%,-50%) scale(.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(5)}}
+.tfx .box{position:relative;text-align:center;margin-top:-6vh;padding:0 12px;animation:boxin 3.4s cubic-bezier(.22,1,.36,1) both}
+.tfx.t4 .box{animation-duration:4.6s}
+@keyframes boxin{0%{opacity:0;transform:translateY(26px) scale(.92)}16%{opacity:1;transform:none}84%{opacity:1}100%{opacity:0;transform:translateY(-14px) scale(1.03)}}
+.tfx .lab{font-family:'Unbounded','Exo 2',sans-serif;font-weight:700;font-size:clamp(11px,3.2vw,17px);letter-spacing:.26em;color:var(--c);text-shadow:0 0 18px rgba(var(--cr),.9);margin-bottom:6px}
+.tfx .lab .ic{width:1em;height:1em;margin:0 1px}
+.tfx .lab .ic svg{fill:var(--c);stroke:var(--c)}
+.tfx .wd{font-family:'Unbounded','Exo 2',sans-serif;font-weight:900;font-size:clamp(28px,9vw,70px);color:#fff;line-height:1.1;text-shadow:0 0 26px rgba(var(--cr),.95),0 0 64px rgba(var(--cr),.55);word-break:break-word}
+.tfx .wd span{display:inline-block;animation:letterin 1s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i) * 55ms)}
+@keyframes letterin{0%{opacity:0;transform:translateY(.4em) scale(.7);filter:blur(8px)}100%{opacity:1;transform:none;filter:none}}
+.tfx .who{margin-top:8px;opacity:.85;font-size:14px;font-weight:700}
+body.mythic{animation:none}
+body.mythic main{animation:mpulse 2.8s ease-in-out}
+@keyframes mpulse{0%,100%{filter:none}40%{filter:brightness(1.14) saturate(1.2)}}
 </style></head><body><button id="mailfab" class="hide" title="Почта">:mail:<span id="mailcnt" class="chip hot"></span></button>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">:volume:</button><button id="trk" title="Сменить музыку">:music:</button>
 <main>
@@ -242,43 +281,51 @@ html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}but
 <section id="friends" class="card hide"><div class="row" style="margin:0"><input id="fnick" maxlength="16" placeholder="Ник друга" autocomplete="off"><button id="bFAdd" class="alt">Добавить</button></div><div id="frq" class="pls"></div><div id="flist" class="pls"></div><button id="bFBack" class="quit">Назад</button></section>
 <section id="play" class="card hide">
   <div class="phead"><button id="bPlayBack" class="quit back">← Назад</button><div class="ptitle">Выбери режим</div></div>
-  <div class="mode q">
-    <div class="mh"><span class="mi2">:rocket:</span><h3>Быстрая игра</h3></div>
-    <p>Без рейтинга. Ищем живых соперников. Если за 12 секунд никого нет, подключим ботов.</p>
-    <button id="bQuick" class="go">Играть</button>
+  <div class="ptabs" id="ptabs"><button class="ptab on">:rocket: Быстрая</button><button class="ptab">:bot: Боты</button><button class="ptab">:swords: Рейтинг</button><button class="ptab">:users: Друзья</button></div>
+  <div class="deck" id="deck">
+    <div class="mode q">
+      <div class="mh"><span class="mi2">:rocket:</span><h3>Быстрая игра</h3></div>
+      <p>Без рейтинга. Ищем живых соперников. Если за 12 секунд никого нет, подключим ботов.</p>
+      <div class="lbl">Что играем</div>
+      <div class="seg wrap" data-for="qMode"><button data-v="words" class="on">Слова</button><button data-v="cities">Города</button><button data-v="names">Имена</button><button data-v="countries">Страны</button><button data-v="all">Все вместе</button></div><input type="hidden" id="qMode" value="words">
+      <button id="bQuick" class="go">Играть</button>
+    </div>
+    <div class="mode b">
+      <div class="mh"><span class="mi2">:bot:</span><h3>Против ботов</h3></div>
+      <p>Тренировка в любое время, без рейтинга.</p>
+      <div class="lbl">Что играем</div>
+      <div class="seg wrap" data-for="botMode"><button data-v="words" class="on">Слова</button><button data-v="cities">Города</button><button data-v="names">Имена</button><button data-v="countries">Страны</button><button data-v="all">Все вместе</button></div><input type="hidden" id="botMode" value="words">
+      <div class="lbl">Сложность</div>
+      <div class="seg" data-for="botLvl"><button data-v="easy">Новичок</button><button data-v="mid" class="on">Игрок</button><button data-v="hard">Мастер</button></div><input type="hidden" id="botLvl" value="mid">
+      <div class="lbl">Соперников</div>
+      <div class="seg" data-for="botN"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button></div><input type="hidden" id="botN" value="2">
+      <div class="lbl">Правила</div>
+      <div class="seg" data-for="botRules"><button data-v="survival" class="on">Выживание</button><button data-v="score">Звёздный счёт</button></div><input type="hidden" id="botRules" value="survival">
+      <div id="botRulesDesc" class="rdesc"></div>
+      <button id="bBots" class="go">Играть</button>
+    </div>
+    <div class="mode r">
+      <div class="mh"><span class="mi2">:swords:</span><h3>Рейтинговая</h3></div>
+      <p>Дуэль 1 на 1. Влияет на рейтинг и лигу.</p>
+      <div id="rtxt" class="pill"></div>
+      <div class="lbl">Режим</div>
+      <div class="seg wrap" data-for="rMode"><button data-v="words" class="on">Слова</button><button data-v="cities">Города</button><button data-v="countries">Страны</button><button data-v="names">Имена</button></div><input type="hidden" id="rMode" value="words">
+      <div class="row" style="margin-top:12px"><button id="bRated" class="go">Искать соперника</button><button id="bTop" class="sq" aria-label="Таблица лидеров" title="Таблица лидеров">:trophy:</button></div>
+    </div>
+    <div class="mode f">
+      <div class="mh"><span class="mi2">:users:</span><h3>С друзьями</h3></div>
+      <p>Создай комнату и отправь код или позови друзей из списка.</p>
+      <button id="bCreate" class="go">Создать комнату</button>
+      <div class="row" style="margin-top:10px"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div>
+    </div>
   </div>
-  <div class="mode b">
-    <div class="mh"><span class="mi2">:bot:</span><h3>Против ботов</h3></div>
-    <p>Тренировка в любое время, без рейтинга.</p>
-    <div class="lbl">Сложность</div>
-    <div class="seg" data-for="botLvl"><button data-v="easy">Новичок</button><button data-v="mid" class="on">Игрок</button><button data-v="hard">Мастер</button></div><input type="hidden" id="botLvl" value="mid">
-    <div class="lbl">Соперников</div>
-    <div class="seg" data-for="botN"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button></div><input type="hidden" id="botN" value="2">
-    <div class="lbl">Правила</div>
-    <div class="seg" data-for="botRules"><button data-v="survival" class="on">Выживание</button><button data-v="score">Звёздный счёт</button></div><input type="hidden" id="botRules" value="survival">
-    <div id="botRulesDesc" class="rdesc"></div>
-    <button id="bBots" class="go">Играть</button>
-  </div>
-  <div class="mode r">
-    <div class="mh"><span class="mi2">:swords:</span><h3>Рейтинговая</h3></div>
-    <p>Дуэль 1 на 1. Влияет на рейтинг и лигу.</p>
-    <div id="rtxt" class="pill"></div>
-    <div class="lbl">Режим</div>
-    <div class="seg" data-for="rMode"><button data-v="words" class="on">Слова</button><button data-v="cities">Города</button><button data-v="countries">Страны</button><button data-v="names">Имена</button></div><input type="hidden" id="rMode" value="words">
-    <div class="row" style="margin-top:12px"><button id="bRated" class="go">Искать соперника</button><button id="bTop" class="sq" aria-label="Таблица лидеров" title="Таблица лидеров">:trophy:</button></div>
-  </div>
-  <div class="mode f">
-    <div class="mh"><span class="mi2">:users:</span><h3>С друзьями</h3></div>
-    <p>Создай комнату и отправь код или позови друзей из списка.</p>
-    <button id="bCreate" class="go">Создать комнату</button>
-    <div class="row" style="margin-top:10px"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div>
-  </div>
+  <div class="dots" id="dots"><i class="on"></i><i></i><i></i><i></i></div>
 </section>
 <section id="queue" class="card hide center"><div style="font-size:20px;font-weight:800;margin-bottom:6px">Ищем соперника...</div><div class="sub">Рейтинговая игра 1 на 1. Допустимый разброс рейтинга растёт с ожиданием.</div><button id="bUnq" class="quit">Отмена</button></section>
 <section id="lobby" class="card hide">
   <div class="sub">Код комнаты, нажми чтобы скопировать</div><div id="rcode" class="code"></div>
   <div id="lp" class="pls"></div>
-  <div id="modebox"><div class="sub">Режим игры</div><select id="modesel"></select><div id="modelab" class="sub"></div><div class="sub" style="margin-top:10px">Правила</div><select id="rulesel"><option value="survival">Выживание</option><option value="score">Звёздный счёт</option></select><div id="rulesdesc" class="sub"></div></div>
+  <div id="modebox"><div class="sub">Режим игры</div><div class="seg wrap" id="modeseg"></div><div id="modelab" class="sub" style="margin-top:6px"></div><div class="lbl">Правила</div><div class="seg" id="ruleseg"><button data-v="survival">Выживание</button><button data-v="score">Звёздный счёт</button></div><div id="rulesdesc" class="rdesc"></div></div>
   <button id="bStart">Начать игру</button><button id="bInvF" class="alt" style="margin-top:10px">:users: Позвать друзей</button><button id="bQuit" class="quit">Выйти из комнаты</button><div id="wait" class="sub"></div>
 </section>
 <section id="game" class="hide">
@@ -487,6 +534,10 @@ function addFriendBtns(el) {
   });
 }
 sfx.ach = () => { [659.3, 783.99, 987.77, 1318.5].forEach((f, i) => tone(f, 1.8, 'sine', .05, i * .17)); };
+sfx.t1 = () => { [784, 1175].forEach((f, i) => tone(f, 1.6, 'sine', .06, i * .14)); };
+sfx.t2 = () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 1.8, 'sine', .06, i * .13)); tone(131, 2, 'sine', .08); };
+sfx.t3 = () => { [392, 523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 2.2, 'sine', .055, i * .12)); [196, 262].forEach(f => tone(f, 2.6, 'triangle', .07, .2)); };
+sfx.t4 = () => { tone(65, 3.2, 'sine', .16); tone(98, 3, 'sine', .08, .1); [311, 370, 466, 622, 740, 932].forEach((f, i) => tone(f, 2.6, 'sine', .045, .3 + i * .16)); [1568, 2093, 2637].forEach((f, i) => tone(f, 1.8, 'sine', .04, 1.3 + i * .15)); };
 sfx.freeze = () => { [1568, 2093, 2637, 3136, 3951].forEach((f, i) => tone(f, .55, 'sine', .11, i * .05)); tone(880, 1.2, 'triangle', .07); };
 sfx.skip = () => {
   if (!ac) return; const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
@@ -606,18 +657,25 @@ function mythicFx() {
   document.body.classList.add('mythic'); setTimeout(() => document.body.classList.remove('mythic'), 1600);
   for (let i = 0; i < 160; i++) setTimeout(() => P.push({ x: Math.random() * W, y: H + 10, vx: (Math.random() - .5) * 2, vy: -(3 + Math.random() * 5), r: 2 + Math.random() * 4, life: 90 + Math.random() * 60, col: ['#ff2442', '#ff8a1f', '#ffd166'][i % 3], up: 1 }), i * 14);
 }
+function hexRgb(hex) { const n = parseInt(hex.slice(1), 16); return (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255); }
+function confetti(cols, n) { for (let i = 0; i < n; i++) P.push({ x: Math.random() * W, y: -10 - Math.random() * 80, vx: (Math.random() - .5) * 2.2, vy: .8 + Math.random() * 2, r: 2 + Math.random() * 3, life: 150 + Math.random() * 70, col: cols[i % cols.length] }); }
+function rise(col, n) { for (let i = 0; i < n; i++) P.push({ x: Math.random() * W, y: H + 10, vx: (Math.random() - .5) * .8, vy: -(1 + Math.random() * 2.2), r: 1.5 + Math.random() * 2.5, life: 120 + Math.random() * 80, col, up: 1 }); }
 function fancy(T, name, word) {
-  const t = TIERS[T], b = $('banner'), f = $('flash');
-  const a = document.createElement('div'); a.textContent = t.n + ' СЛОВО!';
-  const w = document.createElement('div'); w.textContent = word.toUpperCase();
-  const sm = document.createElement('small'); sm.textContent = name;
-  b.style.setProperty('--c', t.c); b.replaceChildren(a, w, sm);
-  b.classList.remove('go'); void b.offsetWidth; b.classList.add('go');
-  f.style.background = t.c; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  const t = TIERS[T], o = document.createElement('div'), el = (c, x) => { const d = document.createElement('div'); d.className = c; if (x !== undefined) d.textContent = x; return d; };
+  o.className = 'tfx t' + T; o.style.setProperty('--c', t.c); o.style.setProperty('--cr', hexRgb(t.c));
+  o.append(el('glow'));
+  if (T >= 3) o.append(el('rays'));
+  if (T === 4) o.append(el('aur'));
+  for (let i = 0; i < Math.min(T, 3); i++) { const r = el('ring'); r.style.setProperty('--d', (i * .35) + 's'); o.append(r); }
+  const box = el('box'), lab = el('lab'), wd = el('wd'), who = el('who', name);
+  lab.textContent = ':star:'.repeat(T) + ' ' + t.n;
+  [...word.toUpperCase()].forEach((ch, i) => { const s = document.createElement('span'); s.textContent = ch === ' ' ? '\u00a0' : ch; s.style.setProperty('--i', i); wd.append(s); });
+  box.append(lab, wd, who); o.append(box); document.body.append(o); setTimeout(() => o.remove(), T === 4 ? 4600 : 3400);
   sfx['t' + T]();
-  for (let i = 0; i < T * 2; i++) setTimeout(() => centerBurst(t.c, 50), i * 120);
-  if (T === 3) shake();
-  if (T === 4) mythicFx();
+  if (T === 1) rise(t.c, 24);
+  if (T === 2) { centerBurst(t.c, 40); rise(t.c, 36); }
+  if (T === 3) { confetti(['#ffb703', '#ffd166', '#ff8a1f', '#fff3c4'], 100); centerBurst(t.c, 50); }
+  if (T === 4) { rise('#ff5d73', 50); rise('#b86bff', 40); [0, 500, 1000].forEach(d => setTimeout(() => centerBurst(d === 500 ? '#b86bff' : '#ff2442', 60), d)); document.body.classList.add('mythic'); setTimeout(() => document.body.classList.remove('mythic'), 2800); }
 }
 function onMsg(m) {
   if (m.t === 'authed') authOk(m);
@@ -638,7 +696,7 @@ function onMsg(m) {
   else if (m.t === 'ach') { sfx.ach(); toast(':trophy: Достижение: ' + m.name); }
   else if (m.t === 'rating') { ELO = m.elo; LG = m.lg; paintMe(); $('rtres').textContent = 'Рейтинг: ' + m.elo + ' (' + (m.d > 0 ? '+' : '') + m.d + ') · ' + m.lg; }
   else if (m.t === 'top') showTop(m.list);
-  else if (m.t === 'queued') { show('queue'); document.querySelector('#queue .sub').textContent = m.casual ? (m.bots ? 'Быстрая игра без рейтинга. Если за 12 секунд никого не найдём, добавим ботов.' : 'Быстрая игра без рейтинга: ищем игроков.') : 'Рейтинговая игра 1 на 1, режим «' + (MODE_NAMES[$('rMode').value] || 'Слова') + '». Допустимый разброс рейтинга растёт с ожиданием.'; }
+  else if (m.t === 'queued') { show('queue'); document.querySelector('#queue .sub').textContent = m.casual ? (m.bots ? 'Быстрая игра («' + (MODE_NAMES[$('qMode').value] || 'Слова') + '») без рейтинга. Если за 12 секунд никого не найдём, добавим ботов.' : 'Быстрая игра без рейтинга: ищем игроков.') : 'Рейтинговая игра 1 на 1, режим «' + (MODE_NAMES[$('rMode').value] || 'Слова') + '». Допустимый разброс рейтинга растёт с ожиданием.'; }
   else if (m.t === 'typing') typingShow(m);
   else if (m.t === 'unqueued') show('menu');
   else if (m.t === 'profile') showProfile(m);
@@ -763,9 +821,12 @@ function paintInv() {
   $('bFreeze').disabled = INV.f < 1; $('bSkip').disabled = INV.s < 1;
 }
 function paintMode() {
-  const sel = $('modesel'), host = S.host === me;
-  if (sel.options.length !== MODES.length) sel.replaceChildren(...MODES.map(k => { const o = document.createElement('option'); o.value = k; o.textContent = MODE_NAMES[k] || k; return o; }));
-  sel.value = S.mode; sel.disabled = !host; $('rulesel').value = S.rules || 'survival'; $('rulesel').disabled = !host || S.rated; $('rulesdesc').textContent = RULES_DESC[S.rules || 'survival'];
+  const host = S.host === me, seg = $('modeseg');
+  if (seg.children.length !== MODES.length) seg.replaceChildren(...MODES.map(k => { const b = document.createElement('button'); b.dataset.v = k; b.textContent = MODE_NAMES[k] || k; return b; }));
+  [...seg.children].forEach(b => b.classList.toggle('on', b.dataset.v === S.mode));
+  [...$('ruleseg').children].forEach(b => b.classList.toggle('on', b.dataset.v === (S.rules || 'survival')));
+  seg.classList.toggle('locked', !host); $('ruleseg').classList.toggle('locked', !host || !!S.rated);
+  $('rulesdesc').textContent = RULES_DESC[S.rules || 'survival'];
   $('modelab').textContent = host ? 'Режим выбираешь ты' : 'Режим выбирает хост';
 }
 function floatEmoji(name, e) {
@@ -790,14 +851,26 @@ $('avfile').onchange = async e => {
 $('bRated').onclick = () => { A(); send({ t: 'queue', mode: $('rMode').value }); };
 $('bQuitG').onclick = () => { if (confirm('Выйти из игры? Это будет считаться поражением.')) $('bQuit').click(); };
 const RULES_DESC = { survival: 'У каждого 3 жизни. Не успел ответить за отведённое время — минус жизнь. Побеждает последний выживший.', score: 'Жизней нет: у каждого по 6 ходов. Очки за слово: обычное 1, редкое 3, эпическое 7, легендарное 15, мифическое 30, плюс 1 за слово от 8 букв. Побеждает тот, у кого больше очков.' };
-document.addEventListener('click', e => { const b = e.target.closest('.seg button'); if (!b) return; const seg = b.parentElement; seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); $(seg.dataset.for).value = b.dataset.v; if (seg.dataset.for === 'botRules') $('botRulesDesc').textContent = RULES_DESC[b.dataset.v]; });
+document.addEventListener('click', e => { const b = e.target.closest('.seg button'); if (!b) return; const seg = b.parentElement;
+  if (seg.id === 'modeseg') { if (S && S.host === me && S.phase === 'lobby') send({ t: 'mode', mode: b.dataset.v }); return; }
+  if (seg.id === 'ruleseg') { if (S && S.host === me && S.phase === 'lobby' && !S.rated) send({ t: 'rules', rules: b.dataset.v }); return; }
+  if (!seg.dataset.for) return;
+  seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); $(seg.dataset.for).value = b.dataset.v; if (seg.dataset.for === 'botRules') $('botRulesDesc').textContent = RULES_DESC[b.dataset.v]; });
 $('botRulesDesc').textContent = RULES_DESC.survival;
 $('bPlay').onclick = () => { A(); show('play'); };
 $('bPlayBack').onclick = () => show('menu');
+(() => {
+  const deck = $('deck'), tabs = [...document.querySelectorAll('#ptabs .ptab')], dots = [...document.querySelectorAll('#dots i')];
+  const idx = () => { const c = deck.children; if (deck.scrollLeft + deck.clientWidth >= deck.scrollWidth - 6) return c.length - 1; return Math.min(c.length - 1, Math.round(deck.scrollLeft / (c[0].offsetWidth + 12))); };
+  const paint = () => { const i = idx(); tabs.forEach((t, k) => t.classList.toggle('on', k === i)); dots.forEach((d, k) => d.classList.toggle('on', k === i)); };
+  deck.addEventListener('scroll', () => requestAnimationFrame(paint), { passive: true });
+  tabs.forEach((t, k) => { t.onclick = () => deck.scrollTo({ left: deck.children[k].offsetLeft - 4, behavior: 'smooth' }); });
+  dots.forEach((d, k) => { d.onclick = () => tabs[k].click(); });
+})();
+
 ['mailfab', 'snd', 'trk'].forEach((id, i) => { const t = ['Почта', 'Звук', 'Следующий трек'][i]; $(id).title = t; $(id).setAttribute('aria-label', t); });
-$('rulesel').onchange = () => send({ t: 'rules', rules: $('rulesel').value });
-$('bQuick').onclick = () => { A(); send({ t: 'queue', casual: true, bots: true }); };
-$('bBots').onclick = () => { A(); send({ t: 'botgame', n: +$('botN').value, lvl: $('botLvl').value, rules: $('botRules').value }); };
+$('bQuick').onclick = () => { A(); send({ t: 'queue', casual: true, bots: true, mode: $('qMode').value }); };
+$('bBots').onclick = () => { A(); send({ t: 'botgame', n: +$('botN').value, lvl: $('botLvl').value, rules: $('botRules').value, mode: $('botMode').value }); };
 $('bUnq').onclick = () => send({ t: 'unqueue' });
 $('bTop').onclick = () => send({ t: 'top' });
 $('bFr').onclick = () => show('friends');
@@ -813,7 +886,6 @@ $('bNickCancel').onclick = () => show('menu');
 $('nickin').onkeydown = e => { if (e.key === 'Enter') $('bNickOk').click(); };
 $('bFreeze').onclick = () => send({ t: 'boost', k: 'freeze' });
 $('bSkip').onclick = () => send({ t: 'boost', k: 'skip' });
-$('modesel').onchange = e => send({ t: 'mode', mode: e.target.value });
 [':laugh:', ':flame:', ':burst:', ':wow:', ':skull:', ':heart:'].forEach(e => { const b = document.createElement('button'); b.textContent = e; b.className = 'quit'; b.style.cssText = 'width:auto;margin:0;padding:8px 12px'; b.onclick = () => send({ t: 'react', e }); $('reacts').append(b); });
 $('bOut').onclick = () => {
   send({ t: 'logout', sess: LS.get('sb_sess') });
