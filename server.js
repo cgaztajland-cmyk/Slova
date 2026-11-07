@@ -702,7 +702,7 @@ async function handle(ws, m) {
     return;
   }
   if (m.t === 'react') {
-    if (!['😂', '🔥', '👏', '😮', '💀', '❤️'].includes(m.e) || Date.now() - (p.rt || 0) < 800) return;
+    if (![':laugh:', ':flame:', ':burst:', ':wow:', ':skull:', ':heart:'].includes(m.e) || Date.now() - (p.rt || 0) < 800) return;
     p.rt = Date.now(); return bcast(r, { t: 'ev', k: 'react', name: p.name, e: m.e });
   }
   if (m.t === 'boost') {
