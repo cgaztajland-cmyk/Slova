@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23080d1a'/%3E%3Ctext x='32' y='47' font-size='42' font-weight='900' text-anchor='middle' fill='%23ffb703' font-family='Arial Black,sans-serif'%3E%D0%A1%3C/text%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400..800&family=Manrope:wght@400..800&family=Unbounded:wght@500..900&display=swap" rel="stylesheet">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080d1a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080d1a"><meta name="description" content="СЛОВОБОЙ — игра в слова онлайн: цепочки слов, дуэли и звёздный счёт. Играй с друзьями, ботами или случайными соперниками."><meta property="og:title" content="СЛОВОБОЙ — игра в слова"><meta property="og:description" content="Цепочки слов, дуэли и звёздный счёт. Бесплатно, прямо в браузере."><meta property="og:type" content="website"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>СЛОВОБОЙ</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -182,54 +182,111 @@ html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}but
 @keyframes pts{0%{opacity:0;transform:translate(-50%,16px) scale(.8)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}100%{opacity:0;transform:translate(-50%,-70px)}}
 .sbrow{padding:6px 0;font-weight:700;font-size:16px}
 #rMode{width:100%}
-</style></head><body><button id="mailfab" class="hide" title="Почта">✉<span id="mailcnt" class="chip hot"></span></button>
-<canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">🔊</button><button id="trk" title="Сменить музыку">🎵</button>
+/* --- icons + modes v8 --- */
+.ic{display:inline-flex;vertical-align:-.24em;width:1.25em;height:1.25em;line-height:0}
+.ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+#tools button{font-size:20px}
+#tools .ic{width:22px;height:22px}
+.fcard .ico{color:#04261b}.fcard .ico .ic{width:24px;height:24px}
+.phead{display:flex;align-items:center;gap:10px;margin:0 0 8px}
+.phead .back{width:auto;margin:0;padding:8px 14px;font-size:14px}
+.ptitle{flex:1;text-align:right;font-family:'Unbounded','Exo 2',sans-serif;font-size:15px;font-weight:700}
+.mode{--acc:#7aa2ff;--accbg:rgba(122,162,255,.16);--accg:linear-gradient(135deg,#7aa2ff,#8a5cff);padding:16px;margin:12px 0;border-radius:20px;border:1px solid rgba(120,150,255,.22);border-left:4px solid var(--acc);background:linear-gradient(160deg,rgba(18,28,62,.72),rgba(10,16,40,.82))}
+.mode.b{--acc:#ff7ab8;--accbg:rgba(255,122,184,.16);--accg:linear-gradient(135deg,#ff7ab8,#8a5cff)}
+.mode.r{--acc:#ffc233;--accbg:rgba(255,194,51,.16);--accg:linear-gradient(135deg,#ffc233,#ff8a3d)}
+.mode.f{--acc:#2ee6a6;--accbg:rgba(46,230,166,.16);--accg:linear-gradient(135deg,#2ee6a6,#19b8d6)}
+.mh{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.mh h3{margin:0;font-family:'Unbounded','Exo 2',sans-serif;font-size:15px}
+.mi2{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:var(--accbg);color:var(--acc)}.mi2 .ic{width:22px;height:22px}
+.mode p{margin:0 0 12px;font-size:13.5px;line-height:1.4;opacity:.78}
+.lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin:12px 0 6px}
+.seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(4,8,24,.65);border:1px solid rgba(120,150,255,.2)}
+.seg button{flex:1;min-height:40px!important;margin:0;padding:6px 6px;border-radius:10px;background:transparent!important;box-shadow:none!important;color:#a9b8e6!important;font-size:14px!important;font-weight:700;transition:background .25s,color .25s}
+.seg button.on{background:var(--accg)!important;color:#0a1230!important;box-shadow:0 4px 14px rgba(0,0,0,.35)!important}
+.rdesc{margin:10px 0 2px;font-size:13px;line-height:1.45;opacity:.82}
+.pill{display:inline-block;padding:5px 12px;border-radius:999px;background:var(--accbg);color:var(--acc);font-size:12.5px;font-weight:800;margin-bottom:4px}
+.pill:empty{display:none}
+.go{width:100%;min-height:54px;margin:12px 0 0;border-radius:16px;background:var(--accg)!important;color:#0a1230!important;font-weight:800;font-size:16px;box-shadow:0 8px 26px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.35)!important;transition:transform .25s cubic-bezier(.22,1,.36,1),filter .25s}
+.go:hover{transform:translateY(-2px);filter:brightness(1.06)}.go:active{transform:scale(.98)}
+.row .go{margin-top:0}
+.sq{flex:none;width:54px;min-height:54px;margin:0;padding:0;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.07)!important;color:#ffc233!important;box-shadow:none!important;border:1px solid rgba(255,194,51,.35)}
+.sq .ic{width:24px;height:24px}
+.mode input{min-height:50px}
+</style></head><body><button id="mailfab" class="hide" title="Почта">:mail:<span id="mailcnt" class="chip hot"></span></button>
+<canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">:volume:</button><button id="trk" title="Сменить музыку">:music:</button>
 <main>
 <h1>СЛОВОБОЙ</h1>
-<section id="login" class="card center"><div class="sub" style="font-size:15px;opacity:.9">Войди, чтобы играть и копить статистику</div><div id="gbtn" style="display:flex;justify-content:center;margin:14px 0"></div><div id="lmsg" class="sub"></div><div class="sub"><a href="/about" style="color:var(--amber)">О игре</a> · <a href="/privacy" style="color:var(--amber)">Политика конфиденциальности</a> · <a href="/terms" style="color:var(--amber)">Условия</a></div></section>
+<section id="login" class="card center"><div class="sub" style="font-size:15px;opacity:.9">Войди, чтобы играть и копить статистику</div><div id="gbtn" style="display:flex;justify-content:center;margin:14px 0"></div><div id="lmsg" class="sub"></div><div class="sub"><a href="/about" style="color:var(--amber)">Об игре</a> · <a href="/privacy" style="color:var(--amber)">Политика конфиденциальности</a> · <a href="/terms" style="color:var(--amber)">Условия</a></div></section>
 <section id="menu" class="card hide">
   <div class="row" style="margin:0 0 12px;align-items:center"><div id="myav"></div><div id="who" style="flex:1;font-weight:800"></div><button id="bNick" class="quit" style="margin:0;width:auto">Профиль</button></div>
   <div id="lvbar"><div id="lvfill"></div></div><div id="lvtxt" class="sub" style="margin:0 0 4px"></div>
   <details class="sub lvhelp"><summary>Как растёт уровень?</summary>+1 XP за каждое слово, +10 за победу, +20 за выполненное задание дня. Каждые 100 XP — новый уровень. Игры с ботами опыт за победы не дают.</details>
   <button id="bPlay">▶ ИГРАТЬ</button>
   <div id="rtxt0" class="sub" style="text-align:center">Выбери режим и вперёд</div>
-  <div class="row"><button id="bFr" class="fcard"><span class="ico">👥</span><span class="ft"><b>Друзья</b><small id="frsub">Добавляй друзей и играй вместе</small></span><span id="frcnt" class="chip"></span><span class="chev">›</span></button></div>
+  <div class="row"><button id="bFr" class="fcard"><span class="ico">:users:</span><span class="ft"><b>Друзья</b><small id="frsub">Добавляй друзей и играй вместе</small></span><span id="frcnt" class="chip"></span><span class="chev">›</span></button></div>
   <div id="dq"></div>
   <button id="bOut" class="quit">Выйти из аккаунта</button>
   <div id="foot">
     <div>Поддержка: <a href="mailto:slovoboy.support@gmail.com">slovoboy.support@gmail.com</a></div>
-    <details><summary>💫 Поддержать автора</summary>
-      <div class="sub">Игра бесплатная. Если нравится, можно скинуть на развитие:</div>
+    <details><summary>:sparkle: Поддержать автора</summary>
+      <div class="sub">Игра бесплатная. Если она нравится, можно поддержать её развитие:</div>
       <div class="wal"><b>SOL</b><code>HkX71UqD9ggRPwAjHzQMhXgEbxtPS7wWdbW42dRaxaCy</code><button class="copy alt" data-v="HkX71UqD9ggRPwAjHzQMhXgEbxtPS7wWdbW42dRaxaCy">Копировать</button></div>
       <div class="wal"><b>ETH</b><code>0x86f91F8B1af8D2738d98824Cf882EAe8fAa6aB49</code><button class="copy alt" data-v="0x86f91F8B1af8D2738d98824Cf882EAe8fAa6aB49">Копировать</button></div>
       <div class="wal"><b>BTC</b><code>bc1pgwml9xnvh4kn6gh0y3ar62vmsqk0hcauunhlp8xlzypg92enhpnsge592d</code><button class="copy alt" data-v="bc1pgwml9xnvh4kn6gh0y3ar62vmsqk0hcauunhlp8xlzypg92enhpnsge592d">Копировать</button></div>
     </details>
-    <div><a href="/about">О игре</a> · <a href="/privacy">Конфиденциальность</a> · <a href="/terms">Условия</a></div>
+    <div><a href="/about">Об игре</a> · <a href="/privacy">Конфиденциальность</a> · <a href="/terms">Условия</a></div>
   </div>
 </section>
 <section id="nick" class="card hide center"><div class="sub" style="font-size:15px;opacity:.9">Придумай ник: его видят все игроки, он уникальный (2-16 символов: буквы, цифры, пробел, _ -)</div><input id="nickin" maxlength="16" autocomplete="off" style="margin:12px 0"><button id="bNickOk">Сохранить</button><button id="bNickCancel" class="quit hide">Отмена</button></section>
 <section id="settings" class="card hide center"><div id="setav" style="display:flex;justify-content:center;margin-bottom:12px"></div><input type="file" id="avfile" accept="image/*" class="hide"><div class="row" style="justify-content:center"><button id="bAvUp" class="alt">Загрузить аватарку</button><button id="bAvDel" class="quit" style="width:auto;margin:0">Удалить</button></div><div class="sub">Картинка сжимается до 128×128 и обрезается по центру</div><button id="bNick2" class="quit">Сменить ник</button><button id="bSetBack" class="quit">Назад</button></section>
 <section id="friends" class="card hide"><div class="row" style="margin:0"><input id="fnick" maxlength="16" placeholder="Ник друга" autocomplete="off"><button id="bFAdd" class="alt">Добавить</button></div><div id="frq" class="pls"></div><div id="flist" class="pls"></div><button id="bFBack" class="quit">Назад</button></section>
 <section id="play" class="card hide">
-  <div class="row" style="margin:0 0 6px;align-items:center"><button id="bPlayBack" class="quit" style="width:auto;margin:0">← Назад</button><div style="flex:1;text-align:right;font-weight:800">Выбери режим</div></div>
-  <div class="mode q"><h3>🚀 Быстрая игра</h3><p>Без рейтинга. Ищем живых соперников; если за 12 секунд никого нет, подключим ботов.</p><button id="bQuick" class="navb quick">Играть</button></div>
-  <div class="mode b"><h3>🤖 Против ботов</h3><p>Тренировка в любое время. Выбери сложность и число соперников.</p><div class="row"><select id="botLvl"><option value="easy">Новичок</option><option value="mid" selected>Игрок</option><option value="hard">Мастер</option></select><select id="botN"><option>1</option><option selected>2</option><option>3</option></select><select id="botRules"><option value="survival">Выживание</option><option value="score">⭐ Звёздный счёт</option></select><button id="bBots" class="navb bots">Играть</button></div></div>
-  <div class="mode r"><h3>⚔️ Рейтинговая</h3><p>1 на 1, влияет на рейтинг и лигу.</p><div id="rtxt" class="sub"></div><div class="row"><select id="rMode"><option value="words">Слова</option><option value="cities">Города</option><option value="countries">Страны</option><option value="names">Имена</option></select></div><div class="row"><button id="bRated">Искать соперника</button><button id="bTop" class="quit" style="width:auto;margin:0">🏆</button></div></div>
-  <div class="mode f"><h3>👥 С друзьями</h3><p>Создай комнату и отправь код или позови друзей из списка.</p><button id="bCreate">Создать комнату</button><div class="row"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div></div>
+  <div class="phead"><button id="bPlayBack" class="quit back">← Назад</button><div class="ptitle">Выбери режим</div></div>
+  <div class="mode q">
+    <div class="mh"><span class="mi2">:rocket:</span><h3>Быстрая игра</h3></div>
+    <p>Без рейтинга. Ищем живых соперников. Если за 12 секунд никого нет, подключим ботов.</p>
+    <button id="bQuick" class="go">Играть</button>
+  </div>
+  <div class="mode b">
+    <div class="mh"><span class="mi2">:bot:</span><h3>Против ботов</h3></div>
+    <p>Тренировка в любое время, без рейтинга.</p>
+    <div class="lbl">Сложность</div>
+    <div class="seg" data-for="botLvl"><button data-v="easy">Новичок</button><button data-v="mid" class="on">Игрок</button><button data-v="hard">Мастер</button></div><input type="hidden" id="botLvl" value="mid">
+    <div class="lbl">Соперников</div>
+    <div class="seg" data-for="botN"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button></div><input type="hidden" id="botN" value="2">
+    <div class="lbl">Правила</div>
+    <div class="seg" data-for="botRules"><button data-v="survival" class="on">Выживание</button><button data-v="score">Звёздный счёт</button></div><input type="hidden" id="botRules" value="survival">
+    <div id="botRulesDesc" class="rdesc"></div>
+    <button id="bBots" class="go">Играть</button>
+  </div>
+  <div class="mode r">
+    <div class="mh"><span class="mi2">:swords:</span><h3>Рейтинговая</h3></div>
+    <p>Дуэль 1 на 1. Влияет на рейтинг и лигу.</p>
+    <div id="rtxt" class="pill"></div>
+    <div class="lbl">Режим</div>
+    <div class="seg" data-for="rMode"><button data-v="words" class="on">Слова</button><button data-v="cities">Города</button><button data-v="countries">Страны</button><button data-v="names">Имена</button></div><input type="hidden" id="rMode" value="words">
+    <div class="row" style="margin-top:12px"><button id="bRated" class="go">Искать соперника</button><button id="bTop" class="sq" aria-label="Таблица лидеров" title="Таблица лидеров">:trophy:</button></div>
+  </div>
+  <div class="mode f">
+    <div class="mh"><span class="mi2">:users:</span><h3>С друзьями</h3></div>
+    <p>Создай комнату и отправь код или позови друзей из списка.</p>
+    <button id="bCreate" class="go">Создать комнату</button>
+    <div class="row" style="margin-top:10px"><input id="code" inputmode="numeric" maxlength="5" placeholder="Код комнаты, 5 цифр" autocomplete="off"><button id="bJoin" class="alt">Войти</button></div>
+  </div>
 </section>
-<section id="queue" class="card hide center"><div style="font-size:20px;font-weight:800;margin-bottom:6px">Ищем соперника...</div><div class="sub">Рейтинговая игра 1 на 1, режим «Слова». Допустимый разброс рейтинга растет с ожиданием.</div><button id="bUnq" class="quit">Отмена</button></section>
+<section id="queue" class="card hide center"><div style="font-size:20px;font-weight:800;margin-bottom:6px">Ищем соперника...</div><div class="sub">Рейтинговая игра 1 на 1. Допустимый разброс рейтинга растёт с ожиданием.</div><button id="bUnq" class="quit">Отмена</button></section>
 <section id="lobby" class="card hide">
   <div class="sub">Код комнаты, нажми чтобы скопировать</div><div id="rcode" class="code"></div>
   <div id="lp" class="pls"></div>
-  <div id="modebox"><div class="sub">Режим игры</div><select id="modesel"></select><div id="modelab" class="sub"></div><div class="sub" style="margin-top:10px">Правила</div><select id="rulesel"><option value="survival">Выживание</option><option value="score">⭐ Звёздный счёт</option></select><div id="rulesdesc" class="sub"></div></div>
-  <button id="bStart">Начать игру</button><button id="bInvF" class="alt" style="margin-top:10px">👥 Позвать друзей</button><button id="bQuit" class="quit">Выйти из комнаты</button><div id="wait" class="sub"></div>
+  <div id="modebox"><div class="sub">Режим игры</div><select id="modesel"></select><div id="modelab" class="sub"></div><div class="sub" style="margin-top:10px">Правила</div><select id="rulesel"><option value="survival">Выживание</option><option value="score">Звёздный счёт</option></select><div id="rulesdesc" class="sub"></div></div>
+  <button id="bStart">Начать игру</button><button id="bInvF" class="alt" style="margin-top:10px">:users: Позвать друзей</button><button id="bQuit" class="quit">Выйти из комнаты</button><div id="wait" class="sub"></div>
 </section>
 <section id="game" class="hide">
   <button id="bQuitG" class="quit gquit">✕ Выйти</button>
   <div class="card center" id="gcard">
     <div class="rb" id="rb"><svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="90"/><circle id="ring" class="rg" cx="100" cy="100" r="90"/></svg><div id="letter">?</div><div id="sec"></div></div>
     <div id="hint" class="sub"></div>
-    <input id="word" placeholder="Твое слово" maxlength="40" autocomplete="off">
+    <input id="word" placeholder="Твоё слово" maxlength="40" autocomplete="off">
     <div class="row hide" id="boosts" style="justify-content:center"><button id="bFreeze" class="alt"></button><button id="bSkip" class="alt"></button></div>
     <div id="reacts" class="reacts"></div>
   </div>
@@ -237,7 +294,7 @@ html{-webkit-text-size-adjust:100%}*{-webkit-tap-highlight-color:transparent}but
 </section>
 <section id="over" class="card hide center">
   <div class="sub">Победитель</div><div id="win" class="code" style="letter-spacing:2px;font-size:44px;cursor:default"></div>
-  <div id="note" class="sub" style="font-size:16px;color:var(--amber);opacity:1"></div><div id="scoreboard" class="sub" style="opacity:1"></div><div id="rtres" class="sub" style="font-size:16px;color:var(--mint);opacity:1"></div><div id="op" class="pls"></div><button id="bAgain">Играть еще раз</button><button id="bQuit2" class="quit">Выйти из комнаты</button><div id="owait" class="sub"></div>
+  <div id="note" class="sub" style="font-size:16px;color:var(--amber);opacity:1"></div><div id="scoreboard" class="sub" style="opacity:1"></div><div id="rtres" class="sub" style="font-size:16px;color:var(--mint);opacity:1"></div><div id="op" class="pls"></div><button id="bAgain">Играть ещё раз</button><button id="bQuit2" class="quit">Выйти из комнаты</button><div id="owait" class="sub"></div>
 </section>
 </main>
 <script>
@@ -251,6 +308,47 @@ const MODE_NAMES = { words: 'Слова', cities: 'Города', names: 'Име
 const nm = () => NICK;
 const TIERS = [null, { n: 'РЕДКОЕ', c: '#4da3ff' }, { n: 'ЭПИЧЕСКОЕ', c: '#b86bff' }, { n: 'ЛЕГЕНДАРНОЕ', c: '#ff8a1f' }, { n: 'МИФИЧЕСКОЕ', c: '#ff2442' }];
 
+const ICONS = {
+  rocket: `<svg viewBox="0 0 24 24"><path d="M12 3c3 2 5 5.5 5 9.5l-2.2 2.2H9.2L7 12.5C7 8.5 9 5 12 3z"/><circle cx="12" cy="9.5" r="1.6"/><path d="M9.2 14.7 6.5 17.5l.8 2.7 2.7-.8M14.8 14.7l2.7 2.8-.8 2.7-2.7-.8M12 16.5v4"/></svg>`,
+  bot: `<svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="10" rx="3"/><path d="M12 8V5.5"/><circle cx="12" cy="4.2" r="1.1"/><circle cx="9.5" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="14.5" cy="13" r="1.2" fill="currentColor" stroke="none"/><path d="M3 12v3M21 12v3"/></svg>`,
+  swords: `<svg viewBox="0 0 24 24"><path d="M5 4.5 15 14.5M19 4.5 9 14.5"/><path d="M12.8 16.8l3.4 3.4M11.2 16.8l-3.4 3.4M3.8 8.2l3-3M20.2 8.2l-3-3"/></svg>`,
+  trophy: `<svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 6H5a2 2 0 0 0 2 4M16 6h3a2 2 0 0 1-2 4"/><path d="M12 13v4M8.5 20h7M10 17h4"/></svg>`,
+  users: `<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.4-3.2 2.6-5 5.5-5s5.1 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.6-.3 4.5 1.2 5 4"/></svg>`,
+  mail: `<svg viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="m4.5 8 7.5 5.5L19.5 8"/></svg>`,
+  volume: `<svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>`,
+  mute: `<svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/></svg>`,
+  music: `<svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>`,
+  star: `<svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z"/></svg>`,
+  camera: `<svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6H8l1.3-2h5.4L16 6h1.5A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg>`,
+  gift: `<svg viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="2"/><path d="M12 9v11M3.5 9h17"/><path d="M12 9c-2.5 0-4.5-1-4.5-2.8C7.5 4.6 9 4 10 4.6c1.2.7 2 2.4 2 4.4zM12 9c2.5 0 4.5-1 4.5-2.8C16.5 4.6 15 4 14 4.6c-1.2.7-2 2.4-2 4.4z"/></svg>`,
+  snow: `<svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/><path d="m9.5 4.7 2.5 2 2.5-2M9.5 19.3l2.5-2 2.5 2"/></svg>`,
+  skip: `<svg viewBox="0 0 24 24"><path d="M5 5.5 12 12l-7 6.5zM13 5.5 20 12l-7 6.5z"/></svg>`,
+  sparkle: `<svg viewBox="0 0 24 24"><path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/></svg>`,
+  lock: `<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`,
+  crown: `<svg viewBox="0 0 24 24"><path d="M4 18 3 8l5 4 4-7 4 7 5-4-1 10z"/></svg>`,
+  check: `<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>`,
+  'dot-on': `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5" fill="#2ee6a6" stroke="none"/></svg>`,
+  'dot-off': `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" opacity=".55"/></svg>`,
+  heart: `<svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.5 4.2 4.2 0 0 1 19.5 10C19.5 15.4 12 20 12 20z" fill="#ff4d6d" stroke="none"/></svg>`,
+  flame: `<svg viewBox="0 0 24 24"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 .8-3.2 2-4.2.2 1.4.9 2.2 1.8 2.5C10.5 8 10.8 5.5 12 3z" fill="#ff8a3d" stroke="none"/><path d="M12 12.5c.9 1.2 2 1.8 2 3.2a2 2 0 0 1-4 0c0-1.1 1-1.8 2-3.2z" fill="#ffd166" stroke="none"/></svg>`,
+  burst: `<svg viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z" fill="#ffd166" stroke="none"/><path d="M19 3.5v3M17.5 5h3" stroke="#ffd166"/></svg>`,
+  laugh: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#ffcf4d" stroke="none"/><path d="M8 10.2h.01M16 10.2h.01" stroke="#3b2a00" stroke-width="2.6"/><path d="M7.4 13.4c.5 3 2.2 4.6 4.6 4.6s4.1-1.6 4.6-4.6z" fill="#3b2a00" stroke="none"/></svg>`,
+  wow: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#ffcf4d" stroke="none"/><path d="M8 9.8h.01M16 9.8h.01" stroke="#3b2a00" stroke-width="2.6"/><ellipse cx="12" cy="16" rx="2.1" ry="2.8" fill="#3b2a00" stroke="none"/></svg>`,
+  skull: `<svg viewBox="0 0 24 24"><path d="M12 3.5c-4.4 0-7.5 2.8-7.5 6.7 0 2.4 1.2 4 2.5 5V19h10v-3.8c1.3-1 2.5-2.6 2.5-5 0-3.9-3.1-6.7-7.5-6.7z" fill="#e8eefc" stroke="none"/><circle cx="9" cy="11" r="1.8" fill="#0b1430" stroke="none"/><circle cx="15" cy="11" r="1.8" fill="#0b1430" stroke="none"/><path d="M10.5 19v-2.2M13.5 19v-2.2" stroke="#0b1430"/></svg>`
+};
+function iconify(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => /:[a-z][a-z-]*:/.test(n.nodeValue) && !/^(OPTION|SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode.nodeName) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
+  const nodes = []; while (w.nextNode()) nodes.push(w.currentNode);
+  nodes.forEach(n => {
+    const parts = n.nodeValue.split(/(:[a-z][a-z-]*:)/);
+    if (!parts.some(p => /^:[a-z][a-z-]*:$/.test(p) && ICONS[p.slice(1, -1)])) return;
+    const f = document.createDocumentFragment();
+    parts.forEach(p => { const k = p.slice(1, -1); if (/^:[a-z][a-z-]*:$/.test(p) && ICONS[k]) { const s = document.createElement('span'); s.className = 'ic'; s.innerHTML = ICONS[k]; f.append(s); } else if (p) f.append(document.createTextNode(p)); });
+    n.replaceWith(f);
+  });
+}
+new MutationObserver(ms => ms.forEach(m => { m.addedNodes.forEach(n => { if (n.nodeType === 3) { if (n.parentNode) iconify(n.parentNode); } else if (n.nodeType === 1) iconify(n); }); if (m.type === 'characterData' && m.target.parentNode) iconify(m.target.parentNode); })).observe(document.body, { childList: true, subtree: true, characterData: true });
+iconify(document.body);
 /* ---------- звук: все синтезируется, файлов нет ---------- */
 let ac, sg, mg, musicOn = true;
 function A() {
@@ -260,8 +358,9 @@ function A() {
     const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4800; lp.Q.value = .4;
     const dl = ac.createDelay(); dl.delayTime.value = .23; const fb = ac.createGain(); fb.gain.value = .32; const wet = ac.createGain(); wet.gain.value = .22;
     mst.connect(lp); lp.connect(ac.destination); lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(ac.destination);
-    sg = ac.createGain(); sg.gain.value = .9; sg.connect(mst);
-    mg = ac.createGain(); mg.gain.value = .6; mg.connect(mst);
+    sg = ac.createGain(); sg.gain.value = .5; sg.connect(mst);
+    mg = ac.createGain(); mg.gain.value = .55; mg.connect(mst);
+    const rv = mkReverb(), rw = ac.createGain(); rw.gain.value = .6; mg.connect(rv); rv.connect(rw); rw.connect(mst);
     startMusic();
   }
   if (ac.state === 'suspended') ac.resume();
@@ -273,43 +372,70 @@ function tone(f, d = .15, type = 'sine', v = .2, when = 0, dest) {
   g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + d);
   o.connect(g); g.connect(dest || sg); o.start(t); o.stop(t + d);
 }
+// ---------- музыка: спокойный генеративный эмбиент (мягкие пэды, редкие колокольчики, реверберация) ----------
+const MT = m => 440 * Math.pow(2, (m - 69) / 12);
 const TRACKS = [
-  { n: 'Тихий дрейф', ms: 900, w: 'sine', v: .06, b: 'sine', pat: [0, 1, 2, 1], ch: [[196, 246.9, 293.7], [174.6, 220, 261.6], [164.8, 196, 246.9], [146.8, 185, 220]] },
-  { n: 'Неон', ms: 260, w: 'triangle', v: .05, b: 'sine', pat: [0, 1, 2, 1], ch: [[220, 261.6, 329.6], [174.6, 220, 261.6], [261.6, 329.6, 392], [196, 246.9, 293.7]] },
-  { n: 'Аркада', ms: 140, w: 'square', v: .03, b: 'square', pat: [0, 2, 1, 2], ch: [[261.6, 329.6, 392], [196, 246.9, 293.7], [220, 261.6, 329.6], [174.6, 220, 261.6]] },
-  { n: 'Космос', ms: 520, w: 'sine', v: .07, b: 'sine', pat: [0, 1, 2, 1], ch: [[146.8, 220, 293.7], [130.8, 196, 261.6], [116.5, 174.6, 233.1], [110, 164.8, 220]] },
-  { n: 'Погоня', ms: 170, w: 'sawtooth', v: .03, b: 'sawtooth', pat: [0, 1, 2, 1], ch: [[164.8, 196, 246.9], [130.8, 164.8, 196], [146.8, 185, 220], [123.5, 155.6, 185]] }
+  { n: 'Туманность', bpm: 50, ch: [[53, 57, 60, 64], [50, 57, 62, 65], [58, 62, 65, 69], [48, 55, 59, 64]], bells: [72, 74, 76, 79, 81, 84] },
+  { n: 'Орбита', bpm: 46, ch: [[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 60, 64], [55, 59, 62, 64]], bells: [69, 72, 74, 76, 79, 81] },
+  { n: 'Рассвет', bpm: 54, ch: [[50, 54, 57, 61], [43, 59, 62, 66], [47, 57, 62, 66], [45, 52, 57, 62]], bells: [74, 76, 78, 81, 83, 86] }
 ];
-let trk = 0, step = 0, mStarted = false;
-function startMusic() {
-  if (mStarted) return; mStarted = true;
-  const tick = () => {
-    const T = TRACKS[trk];
-    if (musicOn && ac) {
-      const ch = T.ch[(step >> 4) % 4], d = T.ms / 1000 * 1.8;
-      tone(ch[T.pat[step % 4]] * 2, d, T.w, T.v, 0, mg);
-      if (step % 4 === 0) tone(ch[0] / 2, d * 3, T.b, T.v * 1.6, 0, mg);
-    }
-    step++; setTimeout(tick, T.ms);
-  };
-  tick();
+let trk = 0, mStarted = false, mSession = 0, mTrackGain = null;
+try { musicOn = localStorage.getItem('sb_music') !== '0'; trk = Math.min(TRACKS.length - 1, Math.max(0, +localStorage.getItem('sb_trk') || 0)); } catch {}
+$('snd').textContent = musicOn ? ':volume:' : ':mute:';
+function mkReverb() {
+  const len = Math.floor(ac.sampleRate * 3.4), b = ac.createBuffer(2, len, ac.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+  const cv = ac.createConvolver(); cv.buffer = b; return cv;
 }
-function nextTrack() { A(); trk = (trk + 1) % TRACKS.length; step = 0; musicOn = true; $('snd').textContent = '🔊'; toast('Музыка: ' + TRACKS[trk].n); }
+function padNote(dest, f, t, dur, v) {
+  [['sine', 0, 1], ['triangle', 7, .35], ['sine', -6, .6]].forEach(([w, det, k]) => {
+    const o = ac.createOscillator(), g = ac.createGain(); o.type = w; o.frequency.value = f; o.detune.value = det;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v * k, t + 2.8); g.gain.setValueAtTime(v * k, t + dur - 3); g.gain.linearRampToValueAtTime(.0001, t + dur + 2.5);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 2.6);
+  });
+}
+function bell(dest, f, t, v) {
+  const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), g2 = ac.createGain(), p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+  o.type = 'sine'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2.01; g2.gain.value = .22; o2.connect(g2); g2.connect(g);
+  g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v, t + .03); g.gain.exponentialRampToValueAtTime(.0001, t + 4.2);
+  o.connect(g); if (p) { p.pan.value = Math.random() * 1.2 - .6; g.connect(p); p.connect(dest); } else g.connect(dest);
+  o.start(t); o2.start(t); o.stop(t + 4.3); o2.stop(t + 4.3);
+}
+function playTrack() {
+  const id = ++mSession, T = TRACKS[trk], tg = ac.createGain();
+  tg.gain.setValueAtTime(.0001, ac.currentTime); tg.gain.linearRampToValueAtTime(1, ac.currentTime + 3); tg.connect(mg);
+  if (mTrackGain) { const old = mTrackGain; old.gain.cancelScheduledValues(ac.currentTime); old.gain.setTargetAtTime(.0001, ac.currentTime, .6); setTimeout(() => old.disconnect(), 4000); }
+  mTrackGain = tg;
+  const bar = 60 / T.bpm * 8; let i = 0;
+  const next = () => {
+    if (id !== mSession || !ac) return;
+    const ch = T.ch[i % T.ch.length], t = ac.currentTime + .1;
+    ch.forEach((m, k) => padNote(tg, MT(m), t, bar, k === 0 ? .03 : .022));
+    padNote(tg, MT(ch[0] - 12), t, bar, .035);
+    const n = 3 + (Math.random() * 3 | 0);
+    for (let b = 0; b < n; b++) bell(tg, MT(T.bells[Math.random() * T.bells.length | 0]), t + 1.2 + b * (bar - 2) / n + Math.random() * 1.2, .03 + Math.random() * .015);
+    i++; setTimeout(next, (bar - 1.5) * 1000);
+  };
+  next();
+}
+function startMusic() { if (mStarted) return; mStarted = true; mg.gain.value = musicOn ? .55 : 0; playTrack(); }
+function setMusic(on) { musicOn = on; try { localStorage.setItem('sb_music', on ? '1' : '0'); } catch {} if (mg) mg.gain.setTargetAtTime(on ? .55 : 0, ac.currentTime, .4); $('snd').textContent = on ? ':volume:' : ':mute:'; }
+function nextTrack() { A(); trk = (trk + 1) % TRACKS.length; try { localStorage.setItem('sb_trk', trk); } catch {} setMusic(true); playTrack(); toast('Музыка: ' + TRACKS[trk].n); }
 const sfx = {
   ok() { tone(660, .12, 'triangle'); tone(880, .15, 'triangle', .2, .09); tone(1320, .25, 'triangle', .18, .18); },
   err() { tone(150, .3, 'triangle', .2); tone(110, .35, 'triangle', .18, .1); },
-  out() { [520, 400, 300, 200].forEach((f, i) => tone(f, .2, 'square', .15, i * .12)); },
+  out() { [520, 400, 300, 200].forEach((f, i) => tone(f, .2, 'triangle', .15, i * .12)); },
   join() { tone(500, .08, 'sine'); tone(750, .12, 'sine', .2, .07); },
   t1() { [660, 880, 1100].forEach((f, i) => tone(f, .25, 'sine', .22, i * .08)); },
-  t2() { [440, 554, 659, 880, 1109].forEach((f, i) => tone(f, .3, 'triangle', .22, i * .07)); tone(110, .8, 'sawtooth', .12); },
-  t3() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, .45, 'square', .12, i * .09)); [262, 392].forEach(f => tone(f, 1.2, 'triangle', .2, .3)); },
+  t2() { [440, 554, 659, 880, 1109].forEach((f, i) => tone(f, .3, 'triangle', .22, i * .07)); tone(110, .8, 'triangle', .12); },
+  t3() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, .45, 'triangle', .12, i * .09)); [262, 392].forEach(f => tone(f, 1.2, 'triangle', .2, .3)); },
   start() { [330, 440, 550, 660, 880].forEach((f, i) => tone(f, .18, 'triangle', .2, i * .07)); },
-  t4() { tone(55, 1.4, 'sine', .5); tone(110, 1, 'sawtooth', .18, .05); [349, 415, 466, 622, 740, 932].forEach((f, i) => tone(f, .9, 'sawtooth', .09, .25 + i * .12)); [1568, 2093, 2637, 3136].forEach((f, i) => tone(f, .5, 'sine', .12, 1 + i * .1)); },
+  t4() { tone(55, 1.4, 'sine', .5); tone(110, 1, 'triangle', .18, .05); [349, 415, 466, 622, 740, 932].forEach((f, i) => tone(f, .9, 'triangle', .09, .25 + i * .12)); [1568, 2093, 2637, 3136].forEach((f, i) => tone(f, .5, 'sine', .12, 1 + i * .1)); },
   win() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, .3, 'triangle', .22, i * .11)); }
 };
 function typingShow(m) {
   let e = $('typing'); if (!e) { e = document.createElement('div'); e.id = 'typing'; document.body.append(e); }
-  e.textContent = '🤖 ' + m.name + ' печатает: ' + m.w + '▌'; e.style.display = 'block';
+  e.textContent = ':bot: ' + m.name + ' печатает: ' + m.w + '▌'; e.style.display = 'block';
   clearTimeout(e._t); e._t = setTimeout(() => { e.style.display = 'none'; }, 1600);
 }
 document.addEventListener('click', e => { const b = e.target.closest('.copy'); if (!b || !navigator.clipboard) return; navigator.clipboard.writeText(b.dataset.v).then(() => { b.textContent = '✓ Скопировано'; setTimeout(() => { b.textContent = 'Копировать'; }, 1400); }); });
@@ -323,7 +449,7 @@ function paintNav() {
 function ago(t) { const s = (Date.now() - t) / 1000; return s < 60 ? 'только что' : s < 3600 ? Math.floor(s / 60) + ' мин назад' : s < 86400 ? Math.floor(s / 3600) + ' ч назад' : Math.floor(s / 86400) + ' дн назад'; }
 function showMail(m) {
   const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; };
-  const kids = [el('h2', '', '✉ Почта')];
+  const kids = [el('h2', '', ':mail: Почта')];
   if (m.rq.length) {
     kids.push(el('h3', '', 'Запросы в друзья'));
     m.rq.forEach(q => {
@@ -336,9 +462,9 @@ function showMail(m) {
       row.append(avEl(q.av, q.nick, 36), who, ok, no); kids.push(row);
     });
   }
-  const txt = i => i.k === 'ach' ? '🏆 Достижение: ' + i.x
-    : i.k === 'friend' ? '🤝 ' + i.x + ' принял(а) твой запрос'
-    : (() => { const [t, r] = i.x.split('|'); return '🎁 ' + t + ' — награда: ' + (r === 'f' ? '❄ заморозка' : '⏭ пропуск хода'); })();
+  const txt = i => i.k === 'ach' ? ':trophy: Достижение: ' + i.x
+    : i.k === 'friend' ? ':users: ' + i.x + ' принял(а) твой запрос'
+    : (() => { const [t, r] = i.x.split('|'); return ':gift: ' + t + ' — награда: ' + (r === 'f' ? ':snow: заморозка' : ':skip: пропуск хода'); })();
   if (m.items.length) {
     kids.push(el('h3', '', 'Недавнее'));
     m.items.forEach(i => { const row = el('div', 'mi' + (i.n ? ' new' : '')), d = el('div', '', ''); d.append(el('span', '', txt(i)), el('small', '', ago(i.t))); row.append(d); kids.push(row); });
@@ -360,15 +486,16 @@ function addFriendBtns(el) {
     d.append(b);
   });
 }
+sfx.ach = () => { [659.3, 783.99, 987.77, 1318.5].forEach((f, i) => tone(f, 1.8, 'sine', .05, i * .17)); };
 sfx.freeze = () => { [1568, 2093, 2637, 3136, 3951].forEach((f, i) => tone(f, .55, 'sine', .11, i * .05)); tone(880, 1.2, 'triangle', .07); };
 sfx.skip = () => {
   if (!ac) return; const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
-  o.type = 'sawtooth'; o.frequency.setValueAtTime(1400, t); o.frequency.exponentialRampToValueAtTime(180, t + .35);
+  o.type = 'triangle'; o.frequency.setValueAtTime(1400, t); o.frequency.exponentialRampToValueAtTime(180, t + .35);
   g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.1, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .4);
   o.connect(g); g.connect(sg); o.start(t); o.stop(t + .42); tone(660, .15, 'triangle', .15, .38); tone(990, .2, 'triangle', .15, .46);
 };
 sfx.lose = () => { [392, 330, 262, 196].forEach((f, i) => tone(f, .5, 'triangle', .16, i * .18)); tone(98, 1.3, 'sine', .25, .3); };
-function popPts(m) { if (!m.pts) return; const d = document.createElement('div'); d.className = 'ptspop'; d.textContent = '+' + m.pts + ' ⭐ ' + m.name; document.body.append(d); setTimeout(() => d.remove(), 1500); }
+function popPts(m) { if (!m.pts) return; const d = document.createElement('div'); d.className = 'ptspop'; d.textContent = '+' + m.pts + ' :star: ' + m.name; document.body.append(d); setTimeout(() => d.remove(), 1500); }
 function ov(cls, ms) { const o = document.createElement('div'); o.className = 'ov ' + cls; document.body.append(o); setTimeout(() => o.remove(), ms); }
 function boostFx(b) {
   if (b === 'freeze') { sfx.freeze(); centerBurst('#9be7ff', 50); ov('ice', 1500); }
@@ -382,7 +509,7 @@ function overFx() {
 const firstGo = () => { A(); ['pointerdown', 'touchend', 'keydown', 'click'].forEach(e => removeEventListener(e, firstGo, true)); };
 ['pointerdown', 'touchend', 'keydown', 'click'].forEach(e => addEventListener(e, firstGo, true));
 $('trk').onclick = () => nextTrack();
-$('snd').onclick = () => { A(); musicOn = !musicOn; $('snd').textContent = musicOn ? '🔊' : '🔇'; };
+$('snd').onclick = () => { A(); setMusic(!musicOn); };
 
 /* ---------- частицы ---------- */
 const cv = $('fx'), cx = cv.getContext('2d'); let W, H; const P = [];
@@ -417,7 +544,7 @@ function show(id) {
   ['login', 'nick', 'settings', 'friends', 'queue', 'play', 'menu', 'lobby', 'game', 'over'].forEach(s => $(s).classList.toggle('hide', s !== id));
   if (id === 'login') $('lmsg').textContent = !GID ? 'На сервере не задан GOOGLE_CLIENT_ID' : LS.get('sb_sess') ? 'Подключаюсь к серверу, это может занять до минуты...' : '';
 }
-function plist(el) { plist0(el); addFriendBtns(el); if (S && S.rules === 'score') [...el.children].forEach((d, i) => { const p = S.players[i]; if (!p) return; const b = document.createElement('span'); b.className = 'scorechip'; b.textContent = '⭐ ' + (p.score || 0); d.append(b); }); }
+function plist(el) { plist0(el); addFriendBtns(el); if (S && S.rules === 'score') [...el.children].forEach((d, i) => { const p = S.players[i]; if (!p) return; const b = document.createElement('span'); b.className = 'scorechip'; b.textContent = ':star: ' + (p.score || 0); d.append(b); }); }
 function plist0(el) {
   el.replaceChildren(...S.players.map(p => {
     const d = document.createElement('div');
@@ -426,9 +553,9 @@ function plist0(el) {
     d.onclick = () => { A(); send({ t: 'profile', id: p.id }); };
     const l = document.createElement('span'); l.className = 'pn';
     const a = avEl(p.av, p.name, 30);
-    const n = document.createElement('span'); n.textContent = (p.bot ? '🤖 ' : '') + p.name + (p.id === S.host ? ' 👑' : '') + (p.id === me ? ' (ты)' : '') + (p.off ? ' 📴' : '');
+    const n = document.createElement('span'); n.textContent = (p.bot ? ':bot: ' : '') + p.name + (p.id === S.host ? ' :crown:' : '') + (p.id === me ? ' (ты)' : '') + (p.off ? ' :dot-off:' : '');
     l.append(a, n);
-    const hh = document.createElement('span'); hh.textContent = S.phase === 'lobby' ? '' : '❤️'.repeat(Math.max(0, p.lives));
+    const hh = document.createElement('span'); hh.textContent = S.phase === 'lobby' || S.rules === 'score' ? '' : ':heart:'.repeat(Math.max(0, p.lives));
     d.append(l, hh); return d;
   }));
 }
@@ -498,28 +625,28 @@ function onMsg(m) {
   else if (m.t === 'joined') { me = m.id; tries = 0; sfx.join(); if (m.inv) INV = m.inv; }
   else if (m.t === 'noroom') { clearRM(); tries = 0; S = null; me = null; show('menu'); }
   else if (m.t === 'err') { shake(); sfx.err(); toast(m.msg, 1); }
-  else if (m.t === 'nick') { setNick(m.nick); toast('Ник сохранен'); show('menu'); }
-  else if (m.t === 'dq') { DQ = m.list; paintDq(); (m.newly || []).forEach(i => { sfx.t2(); toast('Задание выполнено: ' + DQ[i].text + ' (+1 ' + (DQ[i].r === 'f' ? '❄️' : '⏭') + ')'); }); }
+  else if (m.t === 'nick') { setNick(m.nick); toast('Ник сохранён'); show('menu'); }
+  else if (m.t === 'dq') { DQ = m.list; paintDq(); (m.newly || []).forEach(i => { sfx.t2(); toast('Задание выполнено: ' + DQ[i].text + ' (+1 ' + (DQ[i].r === 'f' ? ':snow:' : ':skip:') + ')'); }); }
   else if (m.t === 'inv') { INV = { f: m.f, s: m.s }; paintInv(); if (m.gain) { sfx.t2(); toast('Награда за слово: ' + (m.gain.includes('f') ? '+1 заморозка ' : '') + (m.gain.includes('s') ? '+1 пропуск' : '')); } }
   else if (m.t === 'me') { AV = m.av; paintMe(); if (!$('modal').classList.contains('hide')) send({ t: 'myprofile' }); if (m.av) toast('Аватарка обновлена'); }
   else if (m.t === 'info') { toast(m.msg); if (!$('friends').classList.contains('hide')) send({ t: 'friends_get' }); }
-  else if (m.t === 'frq') { send({ t: 'mystat' }); toast('Заявка в друзья от ' + m.nick); if (!$('friends').classList.contains('hide')) send({ t: 'friends_get' }); }
+  else if (m.t === 'frq') { send({ t: 'mystat' }); toast('Запрос в друзья от ' + m.nick); if (!$('friends').classList.contains('hide')) send({ t: 'friends_get' }); }
   else if (m.t === 'friends') { FR = m; renderFriends(); paintNav(); }
   else if (m.t === 'mystat') { NAV.unread = m.unread; paintNav(); $('lvfill').style.width = Math.max(3, Math.min(100, (m.xp - m.a) / (m.b - m.a) * 100)) + '%'; $('lvtxt').textContent = 'Ур. ' + m.lv + ' · ' + m.xp + ' / ' + m.b + ' XP'; if (!frAsked) { frAsked = true; send({ t: 'friends_get' }); } }
   else if (m.t === 'mail') { NAV.unread = 0; paintNav(); showMail(m); }
   else if (m.t === 'invite') { INVC = m.code; $('invtxt').textContent = m.from + ' зовет в комнату ' + m.code; $('invite').classList.remove('hide'); sfx.join(); }
-  else if (m.t === 'ach') { sfx.t3(); toast('🏆 Достижение: ' + m.name); }
+  else if (m.t === 'ach') { sfx.ach(); toast(':trophy: Достижение: ' + m.name); }
   else if (m.t === 'rating') { ELO = m.elo; LG = m.lg; paintMe(); $('rtres').textContent = 'Рейтинг: ' + m.elo + ' (' + (m.d > 0 ? '+' : '') + m.d + ') · ' + m.lg; }
   else if (m.t === 'top') showTop(m.list);
-  else if (m.t === 'queued') { show('queue'); document.querySelector('#queue .sub').textContent = m.casual ? (m.bots ? 'Быстрая игра без рейтинга. Если за 12 секунд никого не найдём, добавим ботов.' : 'Быстрая игра без рейтинга: ищем игроков.') : 'Рейтинговая игра 1 на 1, режим «Слова». Допустимый разброс рейтинга растёт с ожиданием.'; }
+  else if (m.t === 'queued') { show('queue'); document.querySelector('#queue .sub').textContent = m.casual ? (m.bots ? 'Быстрая игра без рейтинга. Если за 12 секунд никого не найдём, добавим ботов.' : 'Быстрая игра без рейтинга: ищем игроков.') : 'Рейтинговая игра 1 на 1, режим «' + (MODE_NAMES[$('rMode').value] || 'Слова') + '». Допустимый разброс рейтинга растёт с ожиданием.'; }
   else if (m.t === 'typing') typingShow(m);
   else if (m.t === 'unqueued') show('menu');
   else if (m.t === 'profile') showProfile(m);
   else if (m.t === 'ev') {
     if ((m.k === 'ok' && (popPts(m), true))) { sfx.ok(); if (m.tier) fancy(m.tier, m.name, m.word); else { centerBurst('#2ee6a6', 45); toast(m.name + ': ' + m.word.toUpperCase()); } }
-    else if (m.k === 'timeout') { sfx.out(); centerBurst('#ff4d6d', 40); toast(m.name + ' не успел, минус жизнь', 1); }
+    else if (m.k === 'timeout') { sfx.out(); centerBurst('#ff4d6d', 40); toast(m.name + (S && S.rules === 'score' ? ' не успел, ход пропущен' : ' не успел, минус жизнь'), 1); }
     else if (m.k === 'left') { sfx.out(); toast(m.name + ' вышел', 1); }
-    else if (m.k === 'off') toast(m.name + ' отключился, ждем его до 90 секунд', 1);
+    else if (m.k === 'off') toast(m.name + ' отключился, ждём его до 90 секунд', 1);
     else if (m.k === 'back') toast(m.name + ' вернулся');
     else if (m.k === 'boost') { boostFx(m.b); toast(m.name + (m.b === 'freeze' ? ' заморозил время на 10 секунд' : ' пропустил ход')); }
     else if (m.k === 'react') floatEmoji(m.name, m.e);
@@ -533,19 +660,19 @@ function render() {
   if (S.phase === 'lobby') {
     show('lobby'); $('rcode').textContent = S.code; plist($('lp')); paintMode();
     const host = S.host === me; $('bStart').classList.toggle('hide', !host);
-    $('wait').textContent = host ? 'Нужно минимум 2 игрока' : 'Ждем, пока хост начнет игру';
+    $('wait').textContent = host ? 'Нужно минимум 2 игрока' : 'Ждём, пока хост начнёт игру';
   } else if (S.phase === 'play') {
     show('game');
     const my = S.turn === me;
     const L = $('letter'); L.textContent = S.letter ? S.letter.toUpperCase() : '?'; L.classList.remove('pop'); void L.offsetWidth; L.classList.add('pop');
     $('hint').textContent = my ? (S.letter ? 'Твой ход. Слово на «' + S.letter.toUpperCase() + '»' : 'Твой ход. Назови любое слово') : 'Ходит ' + S.players.find(p => p.id === S.turn).name;
-    $('hint').textContent += ' · ' + (MODE_NAMES[S.mode] || '') + (S.rules === 'score' ? ' · ⭐ ходов осталось: ' + S.tleft : ''); paintInv();
-    const w = $('word'); w.disabled = !my; w.placeholder = my ? 'Твое слово' : 'Ждем ход...'; if (my) { w.focus(); }
+    $('hint').textContent += ' · ' + (MODE_NAMES[S.mode] || '') + (S.rules === 'score' ? ' · :star: ходов осталось: ' + S.tleft : ''); paintInv();
+    const w = $('word'); w.disabled = !my; w.placeholder = my ? 'Твоё слово' : 'Ждём ход…'; if (my) { w.focus(); }
     plist($('gp'));
     $('hist').replaceChildren(...S.hist.map(h => { const s = document.createElement('span'); s.textContent = h.w; if (h.t) s.className = 't' + h.t; return s; }));
   } else {
-    show('over'); $('scoreboard').replaceChildren(...(S.rules === 'score' ? S.players.slice().sort((a, b) => (b.score || 0) - (a.score || 0)).map((p, i) => { const d = document.createElement('div'); d.className = 'sbrow'; d.textContent = (i + 1) + '. ' + (p.bot ? '🤖 ' : '') + p.name + ' — ⭐ ' + (p.score || 0); return d; }) : [])); { const mm = S.players.find(p => p.id === me), won = !!(mm && S.winner && mm.name === S.winner); $('over').classList.toggle('won', won); $('over').classList.toggle('lost', !won); } $('win').textContent = S.winner || 'Ничья'; $('note').textContent = S.note ? 'Игрок ' + S.note + '. Авто-победа!' : ''; plist($('op'));
-    const host = S.host === me; $('bAgain').classList.toggle('hide', !host || S.rated); $('owait').textContent = host ? '' : 'Ждем решения хоста';
+    show('over'); $('scoreboard').replaceChildren(...(S.rules === 'score' ? S.players.slice().sort((a, b) => (b.score || 0) - (a.score || 0)).map((p, i) => { const d = document.createElement('div'); d.className = 'sbrow'; d.textContent = (i + 1) + '. ' + (p.bot ? ':bot: ' : '') + p.name + ' — :star: ' + (p.score || 0); return d; }) : [])); { const mm = S.players.find(p => p.id === me), won = !!(mm && S.winner && mm.name === S.winner); $('over').classList.toggle('won', won); $('over').classList.toggle('lost', !won); } $('win').textContent = S.winner || 'Ничья'; $('note').textContent = S.note ? 'Игрок ' + S.note + '. Авто-победа!' : ''; plist($('op'));
+    const host = S.host === me; $('bAgain').classList.toggle('hide', !host || S.rated); $('owait').textContent = host ? '' : 'Ждём решения хоста';
   }
 }
 
@@ -555,7 +682,7 @@ function frame() {
     const r = $('ring'); r.style.strokeDashoffset = 565.5 * (1 - f);
     r.style.stroke = f > .5 ? '#2ee6a6' : f > .25 ? '#ffb703' : '#ff4d6d';
     $('sec').textContent = s;
-    if (left < 5000 && s !== lastTick) { lastTick = s; tone(s <= 2 ? 1100 : 800, .06, 'square', .08); }
+    if (left < 5000 && s !== lastTick) { lastTick = s; tone(s <= 2 ? 1100 : 800, .06, 'triangle', .08); }
   }
   requestAnimationFrame(frame);
 }
@@ -577,17 +704,17 @@ $('word').onkeydown = e => {
 function showProfile(m) {
   const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; };
   const ava = avEl(m.av, m.name, 72); ava.style.margin = '0';
-  const top0 = el('div'); top0.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px'; top0.append(ava); if (m.mine) { const ub = el('button', 'alt', '📷 Загрузить аватарку'); ub.style.cssText = 'width:auto;margin:0;font-size:14px;padding:8px 12px'; ub.onclick = () => $('avfile').click(); top0.append(ub); }
+  const top0 = el('div'); top0.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px'; top0.append(ava); if (m.mine) { const ub = el('button', 'alt', ':camera: Загрузить аватарку'); ub.style.cssText = 'width:auto;margin:0;font-size:14px;padding:8px 12px'; ub.onclick = () => $('avfile').click(); top0.append(ub); }
   const kids = [top0, el('h2', '', m.name + (m.id === me || m.mine ? ' (ты)' : ''))];
   const g = el('div', 'grid');
-  [['Игр', m.games], ['Побед', m.wins], ['Слов написано', m.total], ['Самое длинное', m.best ? m.best.toUpperCase() : '-'], ['Уровень', m.lv], ['Рейтинг', m.elo + ' · ' + m.lg]].forEach(([k, v]) => { const c = el('div', 'st'); c.append(el('b', '', v), el('span', '', k)); g.append(c); });
+  [['Игр сыграно', m.games], ['Побед', m.wins], ['Слов написано', m.total], ['Самое длинное', m.best ? m.best.toUpperCase() : '-'], ['Уровень', m.lv], ['Рейтинг', m.elo + ' · ' + m.lg]].forEach(([k, v]) => { const c = el('div', 'st'); c.append(el('b', '', v), el('span', '', k)); g.append(c); });
   const tg = el('div', 'grid g4');
   [1, 2, 3, 4].forEach(i => { const c = el('div', 'st' + (i === 4 ? ' myth' : '')); c.style.color = TIERS[i].c; c.style.borderColor = TIERS[i].c; c.append(el('b', '', m.tiers[i - 1]), el('span', '', TIERS[i].n)); tg.append(c); });
   const tl = el('div', 'hist'); if (!m.top.length) tl.append(el('span', '', 'Пока пусто'));
   m.top.forEach(([w, c, t]) => tl.append(el('span', t ? 't' + t : '', w + ' x' + c)));
   kids.push(g, el('div', 'sub', (m.reg ? 'В игре с ' + new Date(m.reg).toLocaleDateString('ru-RU') + ' · ' : '') + 'Друзей: ' + (m.frc || 0)), tg, el('h3', '', 'Любимые слова'), tl);
   const got = m.ach.filter(a => a[1]).length, al = el('div', 'hist');
-  m.ach.forEach(([n, u]) => { const sp = el('span', u ? 't3' : '', (u ? '🏆 ' : '🔒 ') + n); if (!u) sp.style.opacity = '.45'; al.append(sp); });
+  m.ach.forEach(([n, u]) => { const sp = el('span', u ? 't3' : '', (u ? ':trophy: ' : ':lock: ') + n); if (!u) sp.style.opacity = '.45'; al.append(sp); });
   kids.push(el('h3', '', 'Достижения ' + got + '/' + m.ach.length), al);
   if (m.myth && m.myth.length) { const hl = el('div', 'hist'); m.myth.forEach(w => hl.append(el('span', 't4', w))); kids.push(el('h3', '', 'Зал мифических слов'), hl); }
   if (m.mine) { const pb = el('button', 'pen', '✎'); pb.title = 'Сменить ник'; pb.onclick = () => { $('modal').classList.add('hide'); $('nickin').value = NICK; $('bNickCancel').classList.remove('hide'); show('nick'); }; kids[1].append(' ', pb); }
@@ -601,7 +728,7 @@ $('bQuit').onclick = quit; $('bQuit2').onclick = quit;
 function paintDq() {
   const box = $('dq'); if (!DQ.length) { box.replaceChildren(); return; }
   const t = document.createElement('div'); t.className = 'sub'; t.style.marginTop = '14px'; t.textContent = 'Задания дня (награда: заморозка или пропуск хода)';
-  box.replaceChildren(t, ...DQ.map(q => { const d = document.createElement('div'); d.className = 'q' + (q.done ? ' done' : ''); const a = document.createElement('span'); a.textContent = q.text; const b = document.createElement('b'); b.textContent = (q.done ? '✅ ' : q.p + '/' + q.target + ' ') + (q.r === 'f' ? '❄️' : '⏭'); d.append(a, b); return d; }));
+  box.replaceChildren(t, ...DQ.map(q => { const d = document.createElement('div'); d.className = 'q' + (q.done ? ' done' : ''); const a = document.createElement('span'); a.textContent = q.text; const b = document.createElement('b'); b.textContent = (q.done ? ':check: ' : q.p + '/' + q.target + ' ') + (q.r === 'f' ? ':snow:' : ':skip:'); d.append(a, b); return d; }));
 }
 function avEl(url, name, sz) {
   const a = document.createElement(url ? 'img' : 'i'); a.className = 'av'; a.style.width = a.style.height = sz + 'px';
@@ -617,8 +744,8 @@ function setNick(n) { NICK = n; paintMe(); }
 const sbtn = (t, f) => { const b = document.createElement('button'); b.textContent = t; b.onclick = f; b.className = 'quit'; b.style.cssText = 'width:auto;margin:0 0 0 6px;padding:6px 10px;font-size:13px'; return b; };
 function renderFriends() {
   const mk = (cls, av, nick, label, btns) => { const d = document.createElement('div'); d.className = 'pl ' + cls; const n = document.createElement('span'); n.className = 'pn'; n.append(avEl(av, nick, 30), document.createTextNode(label)); const b = document.createElement('span'); btns.forEach(x => b.append(x)); d.append(n, b); return d; };
-  $('frq').replaceChildren(...FR.rq.map(q => mk('', q.av, q.nick, 'Заявка: ' + q.nick, [sbtn('✔', () => send({ t: 'friend_resp', nick: q.nick, ok: true })), sbtn('✕', () => send({ t: 'friend_resp', nick: q.nick, ok: false }))])));
-  const rows = FR.fr.map(f => { const b = []; if (f.on && f.room) b.push(sbtn('Войти', () => go({ t: 'join', code: f.room }))); if (f.on && S && S.phase === 'lobby') b.push(sbtn('Позвать', () => send({ t: 'invite', nick: f.nick }))); b.push(sbtn('✕', () => send({ t: 'friend_del', nick: f.nick }))); return mk(f.on ? '' : 'off', f.av, f.nick, (f.on ? '🟢 ' : '⚪ ') + f.nick + ' · ' + f.lg, b); });
+  $('frq').replaceChildren(...FR.rq.map(q => mk('', q.av, q.nick, 'Запрос: ' + q.nick, [sbtn(':check:', () => send({ t: 'friend_resp', nick: q.nick, ok: true })), sbtn('✕', () => send({ t: 'friend_resp', nick: q.nick, ok: false }))])));
+  const rows = FR.fr.map(f => { const b = []; if (f.on && f.room) b.push(sbtn('Войти', () => go({ t: 'join', code: f.room }))); if (f.on && S && S.phase === 'lobby') b.push(sbtn('Позвать', () => send({ t: 'invite', nick: f.nick }))); b.push(sbtn('✕', () => send({ t: 'friend_del', nick: f.nick }))); return mk(f.on ? '' : 'off', f.av, f.nick, (f.on ? ':dot-on: ' : ':dot-off: ') + f.nick + ' · ' + f.lg, b); });
   if (!rows.length) { const e = document.createElement('div'); e.className = 'sub'; e.textContent = 'Пока никого, добавь друга по нику'; rows.push(e); }
   $('flist').replaceChildren(...rows);
 }
@@ -627,18 +754,18 @@ function showTop(list) {
   const rows = list.map((e, i) => { const d = el('div', 'pl'); const l = el('span', 'pn'); l.append(document.createTextNode((i + 1) + '. '), avEl(e.av, e.nick, 30), document.createTextNode(e.nick)); d.append(l, el('span', '', e.lg + ' ' + e.elo)); return d; });
   if (!rows.length) rows.push(el('div', 'sub', 'Пока никто не сыграл рейтинговую партию'));
   const x = el('button', 'quit', 'Закрыть'); x.onclick = () => $('modal').classList.add('hide');
-  $('mbody').className = 'card'; $('mbody').replaceChildren(el('h2', '', '🏆 Топ рейтинга'), ...rows, x); $('modal').classList.remove('hide');
+  $('mbody').className = 'card'; $('mbody').replaceChildren(el('h2', '', ':trophy: Топ рейтинга'), ...rows, x); $('modal').classList.remove('hide');
 }
 function paintInv() {
   const my = S && S.phase === 'play' && S.turn === me && !S.rated;
   $('boosts').classList.toggle('hide', !my);
-  $('bFreeze').textContent = '❄️ Заморозка +10с (' + INV.f + ')'; $('bSkip').textContent = '⏭ Пропуск хода (' + INV.s + ')';
+  $('bFreeze').textContent = ':snow: Заморозка +10с (' + INV.f + ')'; $('bSkip').textContent = ':skip: Пропуск хода (' + INV.s + ')';
   $('bFreeze').disabled = INV.f < 1; $('bSkip').disabled = INV.s < 1;
 }
 function paintMode() {
   const sel = $('modesel'), host = S.host === me;
   if (sel.options.length !== MODES.length) sel.replaceChildren(...MODES.map(k => { const o = document.createElement('option'); o.value = k; o.textContent = MODE_NAMES[k] || k; return o; }));
-  sel.value = S.mode; sel.disabled = !host; $('rulesel').value = S.rules || 'survival'; $('rulesel').disabled = !host || S.rated; $('rulesdesc').textContent = S.rules === 'score' ? 'У каждого по 6 ходов. Очки за слово: обычное 1, редкое 3, эпическое 7, легендарное 15, мифическое 30, +1 за слово от 8 букв. Побеждает тот, у кого больше очков.' : 'Ошибся или не успел: минус жизнь. Побеждает последний выживший.';
+  sel.value = S.mode; sel.disabled = !host; $('rulesel').value = S.rules || 'survival'; $('rulesel').disabled = !host || S.rated; $('rulesdesc').textContent = RULES_DESC[S.rules || 'survival'];
   $('modelab').textContent = host ? 'Режим выбираешь ты' : 'Режим выбирает хост';
 }
 function floatEmoji(name, e) {
@@ -662,8 +789,12 @@ $('avfile').onchange = async e => {
 };
 $('bRated').onclick = () => { A(); send({ t: 'queue', mode: $('rMode').value }); };
 $('bQuitG').onclick = () => { if (confirm('Выйти из игры? Это будет считаться поражением.')) $('bQuit').click(); };
+const RULES_DESC = { survival: 'У каждого 3 жизни. Не успел ответить за отведённое время — минус жизнь. Побеждает последний выживший.', score: 'Жизней нет: у каждого по 6 ходов. Очки за слово: обычное 1, редкое 3, эпическое 7, легендарное 15, мифическое 30, плюс 1 за слово от 8 букв. Побеждает тот, у кого больше очков.' };
+document.addEventListener('click', e => { const b = e.target.closest('.seg button'); if (!b) return; const seg = b.parentElement; seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); $(seg.dataset.for).value = b.dataset.v; if (seg.dataset.for === 'botRules') $('botRulesDesc').textContent = RULES_DESC[b.dataset.v]; });
+$('botRulesDesc').textContent = RULES_DESC.survival;
 $('bPlay').onclick = () => { A(); show('play'); };
 $('bPlayBack').onclick = () => show('menu');
+['mailfab', 'snd', 'trk'].forEach((id, i) => { const t = ['Почта', 'Звук', 'Следующий трек'][i]; $(id).title = t; $(id).setAttribute('aria-label', t); });
 $('rulesel').onchange = () => send({ t: 'rules', rules: $('rulesel').value });
 $('bQuick').onclick = () => { A(); send({ t: 'queue', casual: true, bots: true }); };
 $('bBots').onclick = () => { A(); send({ t: 'botgame', n: +$('botN').value, lvl: $('botLvl').value, rules: $('botRules').value }); };
@@ -683,7 +814,7 @@ $('nickin').onkeydown = e => { if (e.key === 'Enter') $('bNickOk').click(); };
 $('bFreeze').onclick = () => send({ t: 'boost', k: 'freeze' });
 $('bSkip').onclick = () => send({ t: 'boost', k: 'skip' });
 $('modesel').onchange = e => send({ t: 'mode', mode: e.target.value });
-['😂', '🔥', '👏', '😮', '💀', '❤️'].forEach(e => { const b = document.createElement('button'); b.textContent = e; b.className = 'quit'; b.style.cssText = 'width:auto;margin:0;padding:8px 12px'; b.onclick = () => send({ t: 'react', e }); $('reacts').append(b); });
+[':laugh:', ':flame:', ':burst:', ':wow:', ':skull:', ':heart:'].forEach(e => { const b = document.createElement('button'); b.textContent = e; b.className = 'quit'; b.style.cssText = 'width:auto;margin:0;padding:8px 12px'; b.onclick = () => send({ t: 'react', e }); $('reacts').append(b); });
 $('bOut').onclick = () => {
   send({ t: 'logout', sess: LS.get('sb_sess') });
   LS.del('sb_sess'); clearRM(); AUTH = false;
