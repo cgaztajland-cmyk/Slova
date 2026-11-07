@@ -108,6 +108,53 @@ async function loadSession(sess) {
 // Сердцебиение для Upstash: раз в 6 часов пишем ключ, чтобы база не считалась неактивной
 const beat = () => up(['SET', 'alive', String(Date.now())]);
 setInterval(beat, 6 * 3600 * 1000); beat();
+// ---------- ID игроков, роли, баны и ручные команды через Filebase ----------
+const CREATOR_EMAILS = (process.env.CREATOR_EMAIL || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
+const uidMap = new Map();
+async function ensureUid(key, f) {
+  if (f.uid) { uidMap.set(f.uid, key); return f.uid; }
+  for (let i = 0; i < 8; i++) {
+    const id = String(1000000 + crypto.randomInt(9000000));
+    if (uidMap.has(id)) continue;
+    if (KV) { const r = await up(['SET', 'uid:' + id, key, 'NX']); if (r !== 'OK') continue; }
+    f.uid = id; uidMap.set(id, key); dirty.add(key); adminTemplate(f); return id;
+  }
+  return null;
+}
+async function keyOfUid(id) { if (uidMap.has(id)) return uidMap.get(id); if (!KV) return null; const k = await up(['GET', 'uid:' + id]); if (k) uidMap.set(id, k); return k || null; }
+const ADM_HELP = '# Команды (по одной в строке, без решётки). Сервер читает файл при входе игрока и раз в минуту, пока он онлайн.\n# PERM_BAN      бан навсегда\n# BAN_3         бан на 3 дня\n# UNBAN         снять бан\n# LEVEL_20      поставить уровень 20\n# RATING_1200   поставить рейтинг 1200\n# ROLE_CREATOR  статус СОЗДАТЕЛЬ (ROLE_NONE убирает)\n# Чтобы выполнить ту же команду ещё раз, добавь под ней любую строку (например: повтор 2).\n';
+function adminTemplate(f) {
+  if (!S3C) return; const k = 'players/' + f.uid + '.txt';
+  S3C.get(k).then(b => { if (!b) return S3C.put(k, Buffer.from('# Игрок ' + f.uid + '\nNICK=' + (f.nick || '') + '\n' + ADM_HELP), 'text/plain; charset=utf-8'); }).catch(() => {});
+}
+async function applyAdmin(key, f) {
+  if (!S3C || !f.uid) return;
+  let txt; try { const b = await S3C.get('players/' + f.uid + '.txt'); if (!b) return; txt = b.toString('utf8'); } catch { return; }
+  const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#') && !/^NICK=/i.test(l));
+  const hsh = sh(lines.join('\n'));
+  if (!lines.length || f.admH === hsh) return;
+  f.admH = hsh;
+  for (const l of lines) {
+    const u = l.toUpperCase().replace(/\s+/g, ''); let m;
+    if (u === 'PERM_BAN') f.banUntil = -1;
+    else if ((m = /^BAN_(\d{1,4})$/.exec(u))) f.banUntil = Date.now() + Number(m[1]) * 86400000;
+    else if (u === 'UNBAN') f.banUntil = 0;
+    else if ((m = /^LEVEL_(\d{1,4})$/.exec(u))) f.xpAdj = 100 * (Math.max(1, Number(m[1])) - 1) - (f.total + f.wins * 10 + f.qd * 20);
+    else if ((m = /^RATING_(\d{1,5})$/.exec(u))) { f.elo = Number(m[1]); lbSet(key, f.elo); }
+    else if (u === 'ROLE_CREATOR') f.role = 'creator';
+    else if (u === 'ROLE_NONE') f.role = '';
+  }
+  dirty.add(key);
+}
+const isBanned = f => f.banUntil === -1 || (f.banUntil > Date.now());
+const banMsg = f => f.banUntil === -1 ? 'Аккаунт заблокирован навсегда' : 'Аккаунт заблокирован до ' + new Date(f.banUntil).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) + ' (МСК)';
+setInterval(async () => {
+  for (const [key, set] of [...online]) {
+    const f = profiles.get(key); if (!f) continue;
+    await applyAdmin(key, f);
+    if (isBanned(f)) [...set].forEach(w => { send(w, { t: 'banned', msg: banMsg(f) }); try { w.close(1008); } catch {} });
+  }
+}, 60000);
 async function getProfile(key) {
   let p = profiles.get(key);
   if (p) return p;
@@ -132,7 +179,7 @@ process.on('unhandledRejection', e => console.error('unhandled', e));
 
 const loadLines = f => {
   try {
-    return fs.readFileSync(path.join(__dirname, 'data', f), 'utf8').split(/\r?\n/).map(w => norm(w).replace(/\s*\(.*?\)\s*/g, '')).filter(w => w.length >= 2 && /^[а-я]+([ -][а-я]+)*$/.test(w) && !VULGAR.test(w));
+    return fs.readFileSync(path.join(__dirname, 'data', f), 'utf8').split(/\r?\n/).map(w => norm(w).replace(/\s*\(.*?\)\s*/g, '')).filter(w => w.length >= 2 && /^[а-я]+([ -][а-я]+)*$/.test(w));
   } catch { return []; }
 };
 const MODE_DEF = [['words', ''], ['cities', ''], ['names', ''], ['countries', '']];
@@ -147,7 +194,6 @@ const MODE_NAME = Object.fromEntries(MODE_DEF.concat([['all', 'Все вмест
 console.log('Режимы:', MODES_AVAIL.map(k => k + (SETS[k] ? ':' + SETS[k].size : '')).join(', '));
 const { buildTiers } = require('./tiers');
 const TIERS = DICT ? buildTiers([...DICT]) : null;
-const tier = w => (TIERS && TIERS.map.get(w)) || 0;
 if (TIERS) {
   const cnt = [0, 0, 0, 0, 0]; TIERS.map.forEach(t => cnt[t]++);
   console.log('Редкость: обычных', cnt[0], '| редких', cnt[1], '| эпических', cnt[2], '| легендарных', cnt[3], '| мифических', cnt[4], '| список частых слов:', TIERS.common ? TIERS.common : 'не загружен');
@@ -169,7 +215,7 @@ function addWord(p, w, t) {
 // ---------- уровни, лиги, достижения ----------
 const LEAGUES = [[0, 'Бронза'], [900, 'Серебро'], [1100, 'Золото'], [1300, 'Платина'], [1500, 'Алмаз'], [1700, 'Легенда']];
 const leagueOf = e => { let l = LEAGUES[0][1]; for (const x of LEAGUES) if (e >= x[0]) l = x[1]; return l; };
-const xpOf = f => f.total + f.wins * 10 + f.qd * 20;
+const xpOf = f => f.total + f.wins * 10 + f.qd * 20 + (f.xpAdj || 0);
 const levelOf = f => 1 + Math.floor(xpOf(f) / 100);
 const ACH = [
   ['g1', 'Первая игра', f => f.games >= 1], ['g10', '10 игр', f => f.games >= 10], ['w1', 'Первая победа', f => f.wins >= 1],
@@ -209,6 +255,30 @@ function rate(r, win) {
 }
 const queue = [];
 const qRemove = ws => { const i = queue.findIndex(q => q.ws === ws); if (i >= 0) queue.splice(i, 1); };
+// ---------- грубые слова (без эффектов), формы имён, редкость имён/городов/стран ----------
+const NOFX = new Set([...loadLines('vulgar.txt'), ...loadLines('offensive.txt')]);
+DICT.forEach(w => { if (VULGAR.test(w)) NOFX.add(w); });
+const NAMEGRP = new Map();
+try { fs.readFileSync(path.join(__dirname, 'data', 'name_forms.txt'), 'utf8').split(/\r?\n/).forEach((ln, i) => ln.split(',').map(norm).filter(Boolean).forEach(w => NAMEGRP.set(w, 'g' + i))); } catch {}
+let FAME = {}; try { FAME = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'fame.json'), 'utf8')); } catch {}
+const RARE_L = 'фщъцшжэюыйчх';
+const hashW = t => { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+function distribute(set, famous) {
+  const fam = new Set((famous || []).map(norm)), arr = [...set], m = new Map();
+  const score = w => { let v = 0; for (const ch of w) if (RARE_L.includes(ch)) v += 1.2; v += Math.max(0, w.replace(/[ -]/g, '').length - 7) * .55; v += (hashW(w) % 1000) / 1000 * 2.2; return fam.has(w) ? -100 : v; };
+  arr.sort((a, b) => score(a) - score(b));
+  arr.forEach((w, i) => { const p = i / arr.length; m.set(w, p < .62 ? 0 : p < .82 ? 1 : p < .93 ? 2 : p < .98 ? 3 : 4); });
+  return m;
+}
+const CATTIER = { names: distribute(SETS.names, FAME.names), cities: distribute(SETS.cities, FAME.cities), countries: distribute(SETS.countries, FAME.countries) };
+const CATALL = new Map(); Object.values(CATTIER).forEach(mm => mm.forEach((t, w) => { if (t > (CATALL.get(w) || 0)) CATALL.set(w, t); }));
+function tier(w, mode) {
+  if (NOFX.has(w)) return 0;
+  const d = (TIERS && TIERS.map.get(w)) || 0;
+  if (!mode || mode === 'words') return d;
+  if (mode === 'all') return Math.max(d, CATALL.get(w) || 0);
+  return (CATTIER[mode] && CATTIER[mode].get(w)) || 0;
+}
 // ---------- боты ----------
 const BOT_NAMES = ['Орион', 'Луна', 'Нова', 'Комета', 'Квазар', 'Мира', 'Сириус', 'Астра', 'Вега', 'Зенит', 'Галактика', 'Туманность'];
 // know — какую долю словаря «знает» бот, think — пауза на раздумье (мс), cps — мс на букву, miss — шанс «не вспомнить» слово
@@ -224,7 +294,7 @@ function addBots(r, n, lvl) {
 function botTurn(r, p) {
   const cfg = BOT_LVL[p.lvl], stamp = r.turnAt, live = () => r.phase === 'play' && r.players[r.turn] === p && r.turnAt === stamp;
   const idx = botIndex((r.mode === 'all' ? ALL : SETS[r.mode]) || DICT), letter = r.letter || [...idx.keys()][Math.floor(Math.random() * idx.size)];
-  let cand = (idx.get(letter) || []).filter(w => !r.used.has(w) && hashN(p.seed + w) % 100 < cfg.know);
+  let cand = (idx.get(letter) || []).filter(w => !r.used.has(w) && !NOFX.has(w) && !(NAMEGRP.has(w) && r.groups && r.groups.has(NAMEGRP.get(w))) && hashN(p.seed + w) % 100 < cfg.know);
   if (p.lvl === 'hard') cand = cand.sort((a, b) => b.length - a.length).slice(0, 15);
   if (!cand.length || Math.random() < cfg.miss) return; // «не вспомнил слово»: ход сгорит по таймеру
   const w = cand[Math.floor(Math.random() * cand.length)];
@@ -235,7 +305,7 @@ function botTurn(r, p) {
     if (i < w.length) r.btimer = setTimeout(step, cfg.cps * (.6 + Math.random() * .8));
     else r.btimer = setTimeout(() => {
       if (!live() || checkWord(r, w)) return;
-      const tr = tier(w); r.used.add(w); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
+      const tr = tier(w, r.mode); r.used.add(w); if (NAMEGRP.has(w)) (r.groups || (r.groups = new Set())).add(NAMEGRP.get(w)); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
       const pts = r.rules === 'score' ? (SC_PTS[tr] || 1) + (w.length >= 8 ? 1 : 0) : 0; if (pts) p.score = (p.score || 0) + pts;
       bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr, pts }); startTurn(r);
     }, 350 + Math.random() * 450);
@@ -260,7 +330,7 @@ function finishScore(r) {
   award(r, win.length === 1 ? win[0] : null); bcast(r, { t: 'ev', k: 'over' }); sync(r);
 }
 function startGame(r) {
-  r.tcount = 0; r.started = false; r.players.forEach(x => { x.score = 0; });
+  r.tcount = 0; r.started = false; r.groups = new Set(); r.players.forEach(x => { x.score = 0; });
   r.players.forEach(x => { x.lives = LIVES; x.alive = true; });
   r.phase = 'play'; r.turn = -1; r.letter = null; r.used.clear(); r.hist = []; r.winner = null; r.note = null;
   bcast(r, { t: 'ev', k: 'start' }); startTurn(r);
@@ -280,7 +350,7 @@ function matchmake() {
     rm(q); const r = makeRoom(q.mode || 'words', false); r.bots = true; dropKey(q.key, r); addPlayer(q.ws, r); addBots(r, 2, 'mid'); startGame(r);
   });
   // рейтинговая игра: пары только в одном режиме
-  ['words', 'cities', 'names', 'countries'].forEach(md => {
+  ['words', 'cities', 'names', 'countries', 'all'].forEach(md => {
     const rk = queue.filter(q => !q.casual && (q.mode || 'words') === md).sort((a, b) => a.elo - b.elo);
     for (let i = 0; i < rk.length - 1; i++) {
       const a = rk[i], b = rk[i + 1], wait = Math.max(now - a.since, now - b.since) / 1000;
@@ -324,7 +394,7 @@ async function friendsMsg(ws, m) {
   if (m.t === 'friends_get') return view();
   if (!hit(friendRate, key, 40, 3600000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди' });
   const nm = typeof m.nick === 'string' ? cleanName(m.nick) : null;
-  const tk = nm ? await keyOfNick(nm.toLowerCase()) : null;
+  const tk = nm ? (/^\d{6,9}$/.test(nm) ? await keyOfUid(nm) : await keyOfNick(nm.toLowerCase())) : null;
   if (!tk) return send(ws, { t: 'err', msg: 'Игрок не найден' });
   const tp = await getProfile(tk);
   if (m.t === 'friend_add') {
@@ -414,6 +484,8 @@ if (!SM) throw new Error('inline script not found');
 const HASH = "'sha256-" + crypto.createHash('sha256').update(SM[1]).digest('base64') + "'"; // только наш скрипт может выполняться
 const readPub = f => { try { return fs.readFileSync(path.join(__dirname, 'public', f), 'utf8'); } catch { return null; } };
 const PAGES = { '/privacy': readPub('privacy.html'), '/terms': readPub('terms.html'), '/about': readPub('about.html') };
+const ASSETS = {};
+[['manifest.webmanifest', 'application/manifest+json; charset=utf-8'], ['icon-192.png', 'image/png'], ['icon-512.png', 'image/png'], ['apple-touch-icon.png', 'image/png']].forEach(([f, t]) => { try { ASSETS['/' + f] = [t, fs.readFileSync(path.join(__dirname, 'public', f))]; } catch {} });
 async function handleAvatar(req, res) {
   const end = (c, m) => { res.writeHead(c, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end(m || ''); };
   const org = req.headers.origin;
@@ -446,6 +518,7 @@ async function serveAvatar(id, res) {
 const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/ping') { res.writeHead(200); return res.end('ok'); }
   const pth = (req.url || '').split('?')[0];
+  if (req.method === 'GET' && ASSETS[pth]) { res.writeHead(200, { 'Content-Type': ASSETS[pth][0], 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' }); return res.end(ASSETS[pth][1]); }
   if (req.method === 'GET' && PAGES[pth]) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; img-src data:" });
     return res.end(PAGES[pth]);
@@ -480,7 +553,7 @@ const pub = r => ({
   turn: r.phase === 'play' ? r.players[r.turn].id : null,
   letter: r.letter, left: Math.max(0, r.deadline - Date.now()), total: TURN_MS + (r.frz ? 10000 : 0), mode: r.mode, rated: !!r.rated,
   count: r.used.size, rules: r.rules || 'survival', tleft: r.rules === 'score' ? Math.max(0, r.players.filter(p => !p.gone).length * SC_ROUNDS - (r.tcount || 0)) : null, hist: r.hist.slice(-6), winner: r.winner, note: r.note,
-  players: r.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, alive: p.alive, off: !p.ws && !p.bot, bot: !!p.bot, score: p.score || 0, av: p.prof ? avUrl(p.prof) : '' }))
+  players: r.players.map(p => ({ id: p.id, name: p.name, lives: p.lives, alive: p.alive, off: !p.ws && !p.bot, bot: !!p.bot, role: p.prof ? (p.prof.role || '') : '', score: p.score || 0, av: p.prof ? avUrl(p.prof) : '' }))
 });
 const sync = r => bcast(r, pub(r));
 
@@ -513,6 +586,7 @@ function checkWord(r, w) {
   if (w.length < 2 || w.length > 40 || !/^[а-я]+([ -][а-я]+)*$/.test(w)) return 'Только русские буквы, минимум 2';
   if (r.letter && w[0] !== r.letter) return `Слово должно начинаться на «${r.letter.toUpperCase()}»`;
   if (r.used.has(w)) return 'Это слово уже было';
+  if ((r.mode === 'names' || r.mode === 'all') && r.groups && NAMEGRP.has(w) && r.groups.has(NAMEGRP.get(w))) return 'Другая форма этого имени уже была использована';
   const st = r.mode === 'all' ? ALL : SETS[r.mode];
   if (st && !st.has(w)) { if (r.mode === 'words' || r.mode === 'all') { const k = wordKind(w); if (k) return 'Это ' + k + ', а не существительное'; } }
   if (st && !st.has(w)) return r.mode === 'words' ? 'Такого слова нет в словаре' : 'Такого нет в категории «' + (MODE_NAME[r.mode] || '') + '»';
@@ -604,18 +678,25 @@ async function handle(ws, m) {
     f.mseen = Date.now(); dirty.add(c.key);
     return send(ws, { t: 'mail', items, rq: fv.rq });
   }
+  if (m.t === 'userprofile') {
+    if (!c.key) return;
+    const nm = String(m.nick || '').trim(), tk = /^\d{6,9}$/.test(nm) ? await keyOfUid(nm) : await keyOfNick(nm.toLowerCase());
+    if (!tk) return send(ws, { t: 'err', msg: 'Игрок не найден' });
+    const f = await getProfile(tk), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: -1, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+  }
   if (m.t === 'myprofile') { // свой профиль из меню, без комнаты
     if (!c.key) return;
     const f = await getProfile(c.key), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'auth') {
     if (!hit(authRate, c.ip, 20, 60000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди минуту' });
-    let key = null, sess = null, nick = '';
+    let key = null, sess = null, nick = '', email = '';
     if (typeof m.cred === 'string' && m.cred.length < 4096 && oc) {
       try {
         const pl = (await oc.verifyIdToken({ idToken: m.cred, audience: GID })).getPayload();
-        key = gkey(pl.sub); nick = pl.given_name || pl.name || '';
+        key = gkey(pl.sub); nick = pl.given_name || pl.name || ''; email = pl.email_verified && pl.email ? String(pl.email).toLowerCase() : '';
         sess = crypto.randomBytes(16).toString('hex'); await saveSession(sess, key);
       } catch { return send(ws, { t: 'autherr' }); }
     } else if (typeof m.sess === 'string' && /^[a-f0-9]{32}$/.test(m.sess)) {
@@ -625,12 +706,16 @@ async function handle(ws, m) {
     c.key = key;
     (online.get(key) || online.set(key, new Set()).get(key)).add(ws);
     const prof = await getProfile(key);
-    return send(ws, { t: 'authed', sess, nick: prof.nick, suggest: nick.slice(0, 16), modes: MODES_AVAIL, inv: { f: prof.bo.f, s: prof.bo.s }, dq: qList(prof), av: avUrl(prof), elo: prof.elo, lg: leagueOf(prof.elo), lv: levelOf(prof) });
+    await ensureUid(key, prof);
+    if (email && CREATOR_EMAILS.includes(email) && prof.role !== 'creator') { prof.role = 'creator'; dirty.add(key); }
+    await applyAdmin(key, prof);
+    if (isBanned(prof)) { send(ws, { t: 'banned', msg: banMsg(prof) }); return ws.close(1008); }
+    return send(ws, { t: 'authed', uid: prof.uid, role: prof.role || '', sess, nick: prof.nick, suggest: nick.slice(0, 16), modes: MODES_AVAIL, inv: { f: prof.bo.f, s: prof.bo.s }, dq: qList(prof), av: avUrl(prof), elo: prof.elo, lg: leagueOf(prof.elo), lv: levelOf(prof) });
   }
   if (m.t === 'setnick') {
     if (!c.key || c.room) return send(ws, { t: 'err', msg: 'Ник нельзя менять в комнате' });
     const nk = cleanName(m.nick);
-    if (!nk || VULGAR.test(nk.toLowerCase())) return send(ws, { t: 'err', msg: 'Ник: 2-16 символов, буквы, цифры, пробел, _ -' });
+    if (!nk || /^\d+$/.test(nk) || VULGAR.test(nk.toLowerCase())) return send(ws, { t: 'err', msg: 'Ник: 2-16 символов, буквы, цифры, пробел, _ -' });
     if (!hit(nickRate, c.key, 5, 3600000)) return send(ws, { t: 'err', msg: 'Слишком часто меняешь ник, подожди' });
     const prof = await getProfile(c.key), lc = nk.toLowerCase();
     if (prof.nick && prof.nick.toLowerCase() === lc) { prof.nick = nk; dirty.add(c.key); return send(ws, { t: 'nick', nick: nk }); }
@@ -661,7 +746,7 @@ async function handle(ws, m) {
     if (!c.key || c.room || queue.some(q => q.ws === ws)) return;
     const f = await getProfile(c.key);
     if (!f.nick) return send(ws, { t: 'err', msg: 'Сначала выбери ник' });
-    queue.push({ ws, key: c.key, elo: f.elo, since: Date.now(), casual: !!m.casual, bots: !!m.bots, mode: (m.casual ? ['words', 'cities', 'names', 'countries', 'all'] : ['words', 'cities', 'names', 'countries']).includes(m.mode) ? m.mode : 'words' });
+    queue.push({ ws, key: c.key, elo: f.elo, since: Date.now(), casual: !!m.casual, bots: !!m.bots, mode: ['words', 'cities', 'names', 'countries', 'all'].includes(m.mode) ? m.mode : 'words' });
     return send(ws, { t: 'queued', casual: !!m.casual, bots: !!m.bots });
   }
   if (m.t === 'unqueue') { qRemove(ws); return send(ws, { t: 'unqueued' }); }
@@ -748,8 +833,8 @@ async function handle(ws, m) {
   if (m.t === 'quit') { c.room = null; c.player = null; p.ws = null; drop(r, p); return; }
   if (m.t === 'profile') {
     const x = r.players.find(y => y.id === m.id); if (!x) return;
-    if (x.bot) return send(ws, { t: 'info', msg: '🤖 ' + x.name + ' — бот' }); const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    if (x.bot) return send(ws, { t: 'info', msg: ':bot: ' + x.name + ' — бот' }); const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'start' || m.t === 'again') {
     if (p.id !== r.hostId || r.rated) return;
@@ -771,8 +856,10 @@ async function handle(ws, m) {
     if (Date.now() - (p.lastW || 0) < 300) return;
     p.lastW = Date.now();
     const w = norm(m.w), bad = checkWord(r, w);
-    if (bad) { p.bad = (p.bad || 0) + 1; if (p.bad > 40) return ws.close(1008); return send(ws, { t: 'err', msg: bad }); }
-    const tr = tier(w), aw = addWord(p, w, tr), gain = aw.gain;
+    if (bad) { p.bad = (p.bad || 0) + 1; if (p.bad > 40) return ws.close(1008); if (/^Это (глагол|прилагательное)/.test(bad)) { p.nn = (p.nn || 0) + 1; if (p.nn % 3 === 0) return send(ws, { t: 'err', msg: 'Пользователь, в каком вы классе? :laugh:' }); }
+    return send(ws, { t: 'err', msg: bad }); }
+    const tr = tier(w, r.mode), aw = addWord(p, w, tr), gain = aw.gain;
+    if (NAMEGRP.has(w)) (r.groups || (r.groups = new Set())).add(NAMEGRP.get(w));
     const pts = r.rules === 'score' ? (SC_PTS[tr] || 1) + (w.length >= 8 ? 1 : 0) : 0; if (pts) p.score = (p.score || 0) + pts;
     r.used.add(w); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
     bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr, pts });
@@ -834,3 +921,5 @@ setInterval(() => {
 }, 60000);
 
 server.listen(PORT, () => console.log('Словобой: http://localhost:' + PORT));
+// Render не засыпает, пока сервер сам обращается к своему публичному адресу
+if (process.env.RENDER_EXTERNAL_URL) setInterval(() => { fetch(process.env.RENDER_EXTERNAL_URL + '/ping').catch(() => {}); }, 9 * 60 * 1000);
