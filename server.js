@@ -11,7 +11,7 @@ function norm(s) { return String(s).trim().toLowerCase().replace(/ё/g, 'е'); }
 const VULGAR = /^(пизд|хуй|хуя|хуе|блят|бляд|залуп|муда[кч]|мудил|ебал|ебан|ебл|дроч|пидор|пидар|говн|шлюх)/;
 let DICT = null;
 try {
-  DICT = new Set(fs.readFileSync(path.join(__dirname, 'words.txt'), 'utf8').split(/\r?\n/).map(norm).filter(w => w && !VULGAR.test(w)));
+  DICT = new Set(fs.readFileSync(path.join(__dirname, 'words.txt'), 'utf8').split(/\r?\n/).map(norm).filter(Boolean));
   console.log('Словарь загружен:', DICT.size);
 } catch { console.log('words.txt не найден: проверка по словарю ОТКЛЮЧЕНА, принимается любое слово'); }
 
@@ -137,7 +137,8 @@ const loadLines = f => {
 };
 const MODE_DEF = [['words', ''], ['cities', ''], ['names', ''], ['countries', '']];
 const SETS = { words: DICT };
-['animals', 'food'].forEach(k => loadLines(k + '.txt').forEach(w => DICT.add(w)));
+['animals', 'food', 'verbs', 'vulgar'].forEach(k => loadLines(k + '.txt').forEach(w => DICT.add(w)));
+const VERBSET = new Set([...loadLines('verbs.txt'), ...loadLines('vulgar.txt')]);
 ['cities', 'names', 'countries'].forEach(k => { const a = loadLines(k + '.txt'); SETS[k] = a.length ? new Set(a) : null; });
 const ALL = new Set(); Object.values(SETS).forEach(x => x && x.forEach(w => ALL.add(w)));
 const MODES_AVAIL = MODE_DEF.filter(([k]) => SETS[k]).map(([k]) => k);
@@ -212,8 +213,8 @@ const qRemove = ws => { const i = queue.findIndex(q => q.ws === ws); if (i >= 0)
 const BOT_NAMES = ['Орион', 'Луна', 'Нова', 'Комета', 'Квазар', 'Мира', 'Сириус', 'Астра', 'Вега', 'Зенит', 'Галактика', 'Туманность'];
 // know — какую долю словаря «знает» бот, think — пауза на раздумье (мс), cps — мс на букву, miss — шанс «не вспомнить» слово
 const BOT_LVL = { easy: { know: 14, think: [2200, 4200], cps: 330, miss: .10 }, mid: { know: 32, think: [1400, 3000], cps: 240, miss: .06 }, hard: { know: 62, think: [900, 2200], cps: 170, miss: .03 } };
-let BYL = null;
-function botIndex() { if (BYL) return BYL; BYL = new Map(); DICT.forEach(w => { const l = w[0]; if (!BYL.has(l)) BYL.set(l, []); BYL.get(l).push(w); }); return BYL; }
+const BYL = new Map();
+function botIndex(st) { if (BYL.has(st)) return BYL.get(st); const m = new Map(); st.forEach(w => { const l = w[0]; if (!m.has(l)) m.set(l, []); m.get(l).push(w); }); BYL.set(st, m); return m; }
 const hashN = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 function addBots(r, n, lvl) {
   lvl = BOT_LVL[lvl] ? lvl : 'mid';
@@ -222,7 +223,7 @@ function addBots(r, n, lvl) {
 }
 function botTurn(r, p) {
   const cfg = BOT_LVL[p.lvl], stamp = r.turnAt, live = () => r.phase === 'play' && r.players[r.turn] === p && r.turnAt === stamp;
-  const idx = botIndex(), letter = r.letter || [...idx.keys()][Math.floor(Math.random() * idx.size)];
+  const idx = botIndex((r.mode === 'all' ? ALL : SETS[r.mode]) || DICT), letter = r.letter || [...idx.keys()][Math.floor(Math.random() * idx.size)];
   let cand = (idx.get(letter) || []).filter(w => !r.used.has(w) && hashN(p.seed + w) % 100 < cfg.know);
   if (p.lvl === 'hard') cand = cand.sort((a, b) => b.length - a.length).slice(0, 15);
   if (!cand.length || Math.random() < cfg.miss) return; // «не вспомнил слово»: ход сгорит по таймеру
@@ -268,13 +269,15 @@ function matchmake() {
   for (let i = queue.length - 1; i >= 0; i--) if (queue[i].ws.readyState !== 1 || queue[i].ws.ctx.room) queue.splice(i, 1);
   const now = Date.now(), rm = q => queue.splice(queue.indexOf(q), 1);
   // быстрая игра без рейтинга: любые двое; если никого нет 12 сек и стоит галочка — добавляем ботов
-  const cas = queue.filter(q => q.casual);
-  for (let i = 0; i + 1 < cas.length; i += 2) {
-    const a = cas[i], b = cas[i + 1]; if (a.key === b.key) continue; rm(a); rm(b);
-    const r = makeRoom('words', false); [a, b].forEach(q => { dropKey(q.key, r); addPlayer(q.ws, r); }); startGame(r);
-  }
+  ['words', 'cities', 'names', 'countries', 'all'].forEach(md => {
+    const cas = queue.filter(q => q.casual && (q.mode || 'words') === md);
+    for (let i = 0; i + 1 < cas.length; i += 2) {
+      const a = cas[i], b = cas[i + 1]; if (a.key === b.key) continue; rm(a); rm(b);
+      const r = makeRoom(md, false); [a, b].forEach(q => { dropKey(q.key, r); addPlayer(q.ws, r); }); startGame(r);
+    }
+  });
   queue.filter(q => q.casual && q.bots && now - q.since > 12000).forEach(q => {
-    rm(q); const r = makeRoom('words', false); r.bots = true; dropKey(q.key, r); addPlayer(q.ws, r); addBots(r, 2, 'mid'); startGame(r);
+    rm(q); const r = makeRoom(q.mode || 'words', false); r.bots = true; dropKey(q.key, r); addPlayer(q.ws, r); addBots(r, 2, 'mid'); startGame(r);
   });
   // рейтинговая игра: пары только в одном режиме
   ['words', 'cities', 'names', 'countries'].forEach(md => {
@@ -488,11 +491,30 @@ function cleanName(s) {
   return /^[\p{L}\p{N}_ -]{2,16}$/u.test(s) ? s : null;
 }
 
+// определяем часть речи неизвестного слова, чтобы подсказать игроку
+const ADJ_RE = /(ый|ая|ое|ые|ую|ого|ому|ым|ых|ыми|ейший|ейшая|ейшее|кий|гий|хий|жий|ший|чий|щий)$/;
+function verbCandidates(w) {
+  const base = w.replace(/(ся|сь)$/, ''), rf = base !== w ? 'ся' : '', out = [], add = (st, ends) => ends.forEach(e => out.push(st + e + rf));
+  const rules = [[/^(.+)(аешь|аете|аем|ает|ают|аю|ал|ала|али|ало)$/, ['ать']], [/^(.+)(яешь|яете|яем|яет|яют|яю|ял|яла|яли|яло)$/, ['ять']],
+    [/^(.+)(еешь|еете|еем|еет|еют|ею|ел|ела|ели|ело)$/, ['еть']], [/^(.+)(ишь|ите|им|ит|ят|ил|ила|или|ило)$/, ['ить', 'еть']],
+    [/^(.+[^аеиоуыэюяь])ю$/, ['ить', 'еть']], [/^(.+)(уешь|уете|уем|ует|уют|ую)$/, ['овать', 'евать', 'уть']], [/^(.+)(овал|овала|овали|овало)$/, ['овать']],
+    [/^(.+)(ул|ула|ули|уло)$/, ['уть']], [/^(.+)(ыл|ыла|ыли|ыло)$/, ['ыть']]];
+  rules.forEach(([re, ends]) => { const m = re.exec(base); if (m) add(m[1], ends); });
+  return out;
+}
+function wordKind(w) {
+  if (w.length < 4 || /[ -]/.test(w)) return null;
+  if (verbCandidates(w).some(c => VERBSET.has(c))) return 'глагол';
+  if (/([аяеиуыо]ть|ться|йти|чь|чься)$/.test(w)) return 'глагол';
+  if (w.length >= 5 && ADJ_RE.test(w)) return 'прилагательное';
+  return null;
+}
 function checkWord(r, w) {
   if (w.length < 2 || w.length > 40 || !/^[а-я]+([ -][а-я]+)*$/.test(w)) return 'Только русские буквы, минимум 2';
   if (r.letter && w[0] !== r.letter) return `Слово должно начинаться на «${r.letter.toUpperCase()}»`;
   if (r.used.has(w)) return 'Это слово уже было';
   const st = r.mode === 'all' ? ALL : SETS[r.mode];
+  if (st && !st.has(w)) { if (r.mode === 'words' || r.mode === 'all') { const k = wordKind(w); if (k) return 'Это ' + k + ', а не существительное'; } }
   if (st && !st.has(w)) return r.mode === 'words' ? 'Такого слова нет в словаре' : 'Такого нет в категории «' + (MODE_NAME[r.mode] || '') + '»';
   return null;
 }
@@ -632,14 +654,14 @@ async function handle(ws, m) {
     if (!f.nick) return send(ws, { t: 'err', msg: 'Сначала выбери ник' });
     if (rooms.size >= MAX_ROOMS) return send(ws, { t: 'err', msg: 'Сервер перегружен, попробуй позже' });
     if (!hit(createRate, c.key, 20, 600000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди немного' });
-    qRemove(ws); const r = makeRoom('words', false); r.bots = true; dropKey(c.key, r); addPlayer(ws, r);
+    const bmode = ['words', 'cities', 'names', 'countries', 'all'].includes(m.mode) ? m.mode : 'words'; qRemove(ws); const r = makeRoom(bmode, false); r.bots = true; dropKey(c.key, r); addPlayer(ws, r);
     r.rules = m.rules === 'score' ? 'score' : 'survival'; addBots(r, +m.n, m.lvl); return startGame(r);
   }
   if (m.t === 'queue') {
     if (!c.key || c.room || queue.some(q => q.ws === ws)) return;
     const f = await getProfile(c.key);
     if (!f.nick) return send(ws, { t: 'err', msg: 'Сначала выбери ник' });
-    queue.push({ ws, key: c.key, elo: f.elo, since: Date.now(), casual: !!m.casual, bots: !!m.bots, mode: ['words', 'cities', 'names', 'countries'].includes(m.mode) ? m.mode : 'words' });
+    queue.push({ ws, key: c.key, elo: f.elo, since: Date.now(), casual: !!m.casual, bots: !!m.bots, mode: (m.casual ? ['words', 'cities', 'names', 'countries', 'all'] : ['words', 'cities', 'names', 'countries']).includes(m.mode) ? m.mode : 'words' });
     return send(ws, { t: 'queued', casual: !!m.casual, bots: !!m.bots });
   }
   if (m.t === 'unqueue') { qRemove(ws); return send(ws, { t: 'unqueued' }); }
