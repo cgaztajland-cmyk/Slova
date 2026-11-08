@@ -164,7 +164,7 @@ async function getProfile(key) {
   p.nick = p.nick || ''; p.bo = p.bo || { f: 0, s: 0 };
   p.fr = p.fr || []; p.rq = p.rq || []; p.ac = p.ac || []; p.qd = p.qd || 0; p.rg = p.rg || 0; p.elo = p.elo ?? 800; p.av = p.av || ''; p.avv = p.avv || 0; p.reg = p.reg || Date.now(); p.mail = p.mail || []; p.mseen = p.mseen || 0;
   if (p.nick) nicks.set(p.nick.toLowerCase(), key);
-  while (p.t.length < 4) p.t.push(0);
+  while (p.t.length < 5) p.t.push(0);
   p.m = p.m || [];
   return profiles.get(key) || (profiles.set(key, p), p);
 }
@@ -184,8 +184,9 @@ const loadLines = f => {
 };
 const MODE_DEF = [['words', ''], ['cities', ''], ['names', ''], ['countries', '']];
 const SETS = { words: DICT };
-['animals', 'food', 'verbs', 'vulgar'].forEach(k => loadLines(k + '.txt').forEach(w => DICT.add(w)));
-const VERBSET = new Set([...loadLines('verbs.txt'), ...loadLines('vulgar.txt')]);
+['animals', 'food', 'verbs', 'vulgar', 'extra_words', 'secrets'].forEach(k => loadLines(k + '.txt').forEach(w => DICT.add(w)));
+const VERBSET = new Set([...loadLines('verbs.txt'), ...loadLines('vulgar.txt'), ...loadLines('extra_words.txt').filter(w => /(ть|ться|ти|тись|чь|чься)$/.test(w))]);
+const SECRETS = new Set(loadLines('secrets.txt'));
 ['cities', 'names', 'countries'].forEach(k => { const a = loadLines(k + '.txt'); SETS[k] = a.length ? new Set(a) : null; });
 const ALL = new Set(); Object.values(SETS).forEach(x => x && x.forEach(w => ALL.add(w)));
 const MODES_AVAIL = MODE_DEF.filter(([k]) => SETS[k]).map(([k]) => k);
@@ -203,7 +204,8 @@ function addWord(p, w, t) {
   let gain = '';
   if (t && fresh) { // редкости и бусты считаются только за новые для профиля слова
     f.t[t - 1]++; if (t === 4 && f.m.length < 12) f.m.push(w);
-    if ((t === 2 || t === 4) && f.bo.f < 5) { f.bo.f++; gain += 'f'; }
+    if (t === 5) { f.sec = f.sec || []; if (!f.sec.includes(w)) f.sec.push(w); }
+    if ((t === 2 || t === 4 || t === 5) && f.bo.f < 5) { f.bo.f++; gain += 'f'; }
     if (t >= 3 && f.bo.s < 5) { f.bo.s++; gain += 's'; }
   }
   if (w.length > f.best.length) f.best = w;
@@ -257,7 +259,8 @@ const queue = [];
 const qRemove = ws => { const i = queue.findIndex(q => q.ws === ws); if (i >= 0) queue.splice(i, 1); };
 // ---------- грубые слова (без эффектов), формы имён, редкость имён/городов/стран ----------
 const NOFX = new Set([...loadLines('vulgar.txt'), ...loadLines('offensive.txt')]);
-DICT.forEach(w => { if (VULGAR.test(w)) NOFX.add(w); });
+const BAD_STEM = /^(анус|анал$|пенис|вагин|влагалищ|клитор|мошонк|сперм|эякул|оргазм|порно|порнуха|эрот|секс(?!т)|минет|куннил|эрекц|гениталь|лобк|геморро|проститут|шлюх|стриптиз|мастурб|дрочи|эрогенн)/;
+DICT.forEach(w => { if (VULGAR.test(w) || BAD_STEM.test(w)) NOFX.add(w); });
 const NAMEGRP = new Map();
 try { fs.readFileSync(path.join(__dirname, 'data', 'name_forms.txt'), 'utf8').split(/\r?\n/).forEach((ln, i) => ln.split(',').map(norm).filter(Boolean).forEach(w => NAMEGRP.set(w, 'g' + i))); } catch {}
 let FAME = {}; try { FAME = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'fame.json'), 'utf8')); } catch {}
@@ -273,12 +276,47 @@ function distribute(set, famous) {
 const CATTIER = { names: distribute(SETS.names, FAME.names), cities: distribute(SETS.cities, FAME.cities), countries: distribute(SETS.countries, FAME.countries) };
 const CATALL = new Map(); Object.values(CATTIER).forEach(mm => mm.forEach((t, w) => { if (t > (CATALL.get(w) || 0)) CATALL.set(w, t); }));
 function tier(w, mode) {
+  if (SECRETS.has(w)) return 5;
   if (NOFX.has(w)) return 0;
-  const d = (TIERS && TIERS.map.get(w)) || 0;
+  let d = (TIERS && TIERS.map.get(w)) || 0;
+  if (!d && (!mode || mode === 'words' || mode === 'all') && !DICT.has(w)) d = w.length >= 14 ? 2 : w.length >= 11 ? 1 : 0;
   if (!mode || mode === 'words') return d;
   if (mode === 'all') return Math.max(d, CATALL.get(w) || 0);
   return (CATTIER[mode] && CATTIER[mode].get(w)) || 0;
 }
+// ---------- производные слова и формы одного слова ----------
+const COMBO = ['агро', 'авиа', 'авто', 'аква', 'анти', 'био', 'вело', 'видео', 'гео', 'гидро', 'гипер', 'зоо', 'инфра', 'кибер', 'макро', 'мега', 'метео', 'микро', 'мини', 'мото', 'мульти', 'нано', 'нейро', 'пан', 'полу', 'пост', 'прото', 'псевдо', 'радио', 'сейсмо', 'социо', 'супер', 'теле', 'термо', 'техно', 'транс', 'ультра', 'фото', 'цифро', 'электро', 'энерго', 'эко', 'этно', 'нео', 'квази', 'само', 'гос', 'спец', 'мед', 'аэро', 'медиа', 'кино', 'космо', 'нефте', 'газо', 'водо', 'паро', 'хлебо', 'лесо', 'мясо', 'рыбо', 'судо', 'много', 'все', 'видео'];
+const VPREF = ['по', 'за', 'на', 'вы', 'при', 'от', 'до', 'про', 'пере', 'раз', 'рас', 'под', 'об', 'с', 'у', 'вос', 'воз', 'ис', 'из', 'недо', 'пред', 'над', 'со', 'во', 'обо', 'подо', 'разо', 'ото'];
+function verbOk(w) {
+  if (!/(ть|ться|ти|тись|чь|чься)$/.test(w)) return false;
+  const b = w.replace(/(ся|сь)$/, '');
+  if (VERBSET.has(b)) return true;
+  for (const p of VPREF) if (b.startsWith(p) && b.length - p.length >= 4 && VERBSET.has(b.slice(p.length))) return true;
+  return false;
+}
+function nounDerived(w) { for (const p of COMBO) if (w.startsWith(p) && w.length - p.length >= 3 && DICT.has(w.slice(p.length))) return true; return false; }
+const derivedOk = w => nounDerived(w) || verbOk(w);
+function lemmaKey(w) { if (/ться$/.test(w)) return 'v:' + w.slice(0, -2); if (/ть$/.test(w)) return 'v:' + w; return null; }
+function groupUsed(r, w) {
+  const g = r.groups; if (!g) return '';
+  if ((r.mode === 'names' || r.mode === 'all') && NAMEGRP.has(w) && g.has(NAMEGRP.get(w))) return 'n';
+  if (r.mode === 'words' || r.mode === 'all') { const k = lemmaKey(w); if (k && g.has(k)) return 'v'; }
+  return '';
+}
+function addGroups(r, w) { r.groups = r.groups || new Set(); if (NAMEGRP.has(w)) r.groups.add(NAMEGRP.get(w)); const k = lemmaKey(w); if (k) r.groups.add(k); }
+// ---------- журнал игр в Filebase ----------
+const MODE_RU = { words: 'Слова', cities: 'Города', names: 'Имена', countries: 'Страны', all: 'Все вместе' };
+const TIERN = ['', 'редкое', 'эпическое', 'легендарное', 'мифическое', 'СЕКРЕТНОЕ'];
+const hhmmss = () => new Date().toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour12: false });
+const dayStr = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' });
+const who = p => p.bot ? 'бот ' + p.name : p.name + ' (ID ' + ((p.prof && p.prof.uid) || '?') + ')';
+function glog(r, text) {
+  if (!S3C) return;
+  if (!r.log) { r.log = []; r.logKey = 'logs/' + dayStr() + '/' + r.code + '_' + hhmmss().replace(/:/g, '') + '.txt'; }
+  r.log.push(hhmmss() + ' ' + text); r.logDirty = true;
+}
+function glogFlush(r) { if (!r.logDirty || !r.logKey || !S3C) return; r.logDirty = false; S3C.put(r.logKey, Buffer.from(r.log.join('\n') + '\n'), 'text/plain; charset=utf-8').catch(() => { r.logDirty = true; }); }
+setInterval(() => rooms.forEach(glogFlush), 30000);
 // ---------- боты ----------
 const BOT_NAMES = ['Орион', 'Луна', 'Нова', 'Комета', 'Квазар', 'Мира', 'Сириус', 'Астра', 'Вега', 'Зенит', 'Галактика', 'Туманность'];
 // know — какую долю словаря «знает» бот, think — пауза на раздумье (мс), cps — мс на букву, miss — шанс «не вспомнить» слово
@@ -294,7 +332,7 @@ function addBots(r, n, lvl) {
 function botTurn(r, p) {
   const cfg = BOT_LVL[p.lvl], stamp = r.turnAt, live = () => r.phase === 'play' && r.players[r.turn] === p && r.turnAt === stamp;
   const idx = botIndex((r.mode === 'all' ? ALL : SETS[r.mode]) || DICT), letter = r.letter || [...idx.keys()][Math.floor(Math.random() * idx.size)];
-  let cand = (idx.get(letter) || []).filter(w => !r.used.has(w) && !NOFX.has(w) && !(NAMEGRP.has(w) && r.groups && r.groups.has(NAMEGRP.get(w))) && hashN(p.seed + w) % 100 < cfg.know);
+  let cand = (idx.get(letter) || []).filter(w => !r.used.has(w) && !NOFX.has(w) && !groupUsed(r, w) && hashN(p.seed + w) % 100 < cfg.know);
   if (p.lvl === 'hard') cand = cand.sort((a, b) => b.length - a.length).slice(0, 15);
   if (!cand.length || Math.random() < cfg.miss) return; // «не вспомнил слово»: ход сгорит по таймеру
   const w = cand[Math.floor(Math.random() * cand.length)];
@@ -305,8 +343,9 @@ function botTurn(r, p) {
     if (i < w.length) r.btimer = setTimeout(step, cfg.cps * (.6 + Math.random() * .8));
     else r.btimer = setTimeout(() => {
       if (!live() || checkWord(r, w)) return;
-      const tr = tier(w, r.mode); r.used.add(w); if (NAMEGRP.has(w)) (r.groups || (r.groups = new Set())).add(NAMEGRP.get(w)); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
+      const tr = tier(w, r.mode); r.used.add(w); addGroups(r, w); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
       const pts = r.rules === 'score' ? (SC_PTS[tr] || 1) + (w.length >= 8 ? 1 : 0) : 0; if (pts) p.score = (p.score || 0) + pts;
+      glog(r, who(p) + ' написал «' + w + '»' + (tr ? ' [' + TIERN[tr] + ']' : '') + (pts ? ', +' + pts + ' очков' : ''));
       bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr, pts }); startTurn(r);
     }, 350 + Math.random() * 450);
   };
@@ -320,9 +359,10 @@ function addPlayer(ws, r) {
   const c = ws.ctx, prof = profiles.get(c.key);
   const p = { id: crypto.randomBytes(4).toString('hex'), name: prof.nick, ws, lives: LIVES, alive: true, key: c.key, prof, kick: null, gone: false };
   r.players.push(p); if (!r.hostId) r.hostId = p.id; c.room = r; c.player = p;
+  glog(r, r.players.length === 1 ? who(p) + ' создал комнату ' + r.code + ' (' + (r.rated ? 'рейтинговая игра' : 'обычная игра') + ', режим: ' + MODE_RU[r.mode] + ')' : who(p) + ' вошёл в комнату');
   send(ws, { t: 'joined', id: p.id, inv: { f: prof.bo.f, s: prof.bo.s } });
 }
-const SC_PTS = [1, 3, 7, 15, 30], SC_ROUNDS = 6;
+const SC_PTS = [1, 3, 7, 15, 30, 100], SC_ROUNDS = 6;
 function finishScore(r) {
   clearTimeout(r.timer); clearTimeout(r.btimer);
   const ps = r.players.filter(p => !p.gone), top = Math.max(...ps.map(p => p.score || 0)), win = ps.filter(p => (p.score || 0) === top);
@@ -330,6 +370,7 @@ function finishScore(r) {
   award(r, win.length === 1 ? win[0] : null); bcast(r, { t: 'ev', k: 'over' }); sync(r);
 }
 function startGame(r) {
+  glog(r, 'игра началась. Режим: ' + MODE_RU[r.mode] + '. Правила: ' + (r.rules === 'score' ? 'Звёздный счёт' : 'Выживание') + '. Игроки: ' + r.players.map(who).join(', '));
   r.tcount = 0; r.started = false; r.groups = new Set(); r.players.forEach(x => { x.score = 0; });
   r.players.forEach(x => { x.lives = LIVES; x.alive = true; });
   r.phase = 'play'; r.turn = -1; r.letter = null; r.used.clear(); r.hist = []; r.winner = null; r.note = null;
@@ -468,6 +509,7 @@ function qEvent(p, e) {
 }
 
 function award(r, win) {
+  glog(r, 'игра окончена. Победитель: ' + (win ? who(win) : 'нет') + (r.rules === 'score' ? '. Очки: ' + r.players.map(x => x.name + ' ' + (x.score || 0)).join(', ') : '') + (r.note ? '. ' + r.note : '')); glogFlush(r);
   if (r.bots) return; // игры с ботами не дают рейтинг, победы и задания
   if (r.rated) rate(r, win);
   if (r.hist.length < 4) return; // слишком короткие игры не идут в статистику (защита от накрутки)
@@ -536,6 +578,7 @@ const server = http.createServer((req, res) => {
       'Strict-Transport-Security': 'max-age=31536000',
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
       'Referrer-Policy': 'no-referrer',
+      'Cache-Control': 'no-cache',
       'Content-Security-Policy': "default-src 'self'; script-src " + HASH + " https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src https://accounts.google.com/gsi/; connect-src 'self' ws: wss: https://accounts.google.com/gsi/; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
     });
     return res.end(HTML);
@@ -586,10 +629,10 @@ function checkWord(r, w) {
   if (w.length < 2 || w.length > 40 || !/^[а-я]+([ -][а-я]+)*$/.test(w)) return 'Только русские буквы, минимум 2';
   if (r.letter && w[0] !== r.letter) return `Слово должно начинаться на «${r.letter.toUpperCase()}»`;
   if (r.used.has(w)) return 'Это слово уже было';
-  if ((r.mode === 'names' || r.mode === 'all') && r.groups && NAMEGRP.has(w) && r.groups.has(NAMEGRP.get(w))) return 'Другая форма этого имени уже была использована';
+  { const gu = groupUsed(r, w); if (gu) return gu === 'n' ? 'Другая форма этого имени уже была использована' : 'Другая форма этого слова уже была использована'; }
   const st = r.mode === 'all' ? ALL : SETS[r.mode];
-  if (st && !st.has(w)) { if (r.mode === 'words' || r.mode === 'all') { const k = wordKind(w); if (k) return 'Это ' + k + ', а не существительное'; } }
-  if (st && !st.has(w)) return r.mode === 'words' ? 'Такого слова нет в словаре' : 'Такого нет в категории «' + (MODE_NAME[r.mode] || '') + '»';
+  if (st && !st.has(w) && !((r.mode === 'words' || r.mode === 'all') && derivedOk(w))) { if (r.mode === 'words' || r.mode === 'all') { const k = wordKind(w); if (k) return 'Это ' + k + ', а не существительное'; } }
+  if (st && !st.has(w) && !((r.mode === 'words' || r.mode === 'all') && derivedOk(w))) return r.mode === 'words' ? 'Такого слова нет в словаре' : 'Такого нет в категории «' + (MODE_NAME[r.mode] || '') + '»';
   return null;
 }
 
@@ -598,6 +641,7 @@ function armTimer(r) {
   const cur = r.players[r.turn];
   r.timer = setTimeout(() => {
     if (r.rules !== 'score') { cur.lives--; if (cur.lives <= 0) cur.alive = false; }
+    glog(r, who(cur) + ' не успел' + (r.rules !== 'score' ? ', осталось жизней: ' + Math.max(0, cur.lives) : ''));
     bcast(r, { t: 'ev', k: 'timeout', name: cur.name });
     startTurn(r);
   }, Math.max(0, r.deadline - Date.now()));
@@ -638,10 +682,10 @@ function leave(ws) {
 function drop(r, p) {
   clearTimeout(p.kick); p.kick = null;
   if (p.gone || !r.players.includes(p)) return;
-  p.gone = true;
+  p.gone = true; glog(r, who(p) + ' вышел');
   if (r.phase === 'lobby') r.players = r.players.filter(x => x !== p); else p.alive = false;
   const pending = r.players.filter(x => !x.gone && (x.ws || x.kick));
-  if (!pending.length) { clearTimeout(r.timer); clearTimeout(r.btimer); rooms.delete(r.code); return; }
+  if (!pending.length) { glog(r, 'комната закрыта'); glogFlush(r); clearTimeout(r.timer); clearTimeout(r.btimer); rooms.delete(r.code); return; }
   if (r.hostId === p.id) r.hostId = (r.players.find(x => !x.gone && x.ws) || pending[0]).id;
   bcast(r, { t: 'ev', k: 'left', name: p.name });
   if (r.phase === 'play') {
@@ -669,7 +713,7 @@ async function handle(ws, m) {
   if (m.t === 'mystat') {
     if (!c.key) return;
     const f = await getProfile(c.key), xp = xpOf(f), lv = levelOf(f);
-    return send(ws, { t: 'mystat', lv, xp, a: 100 * (lv - 1), b: 100 * lv, frc: f.fr.length, unread: f.mail.filter(x => x.t > f.mseen).length + f.rq.length });
+    return send(ws, { t: 'mystat', lv, xp, a: 100 * (lv - 1), b: 100 * lv, frc: f.fr.length, role: f.role || '', unread: f.mail.filter(x => x.t > f.mseen).length + f.rq.length });
   }
   if (m.t === 'mail_get') {
     if (!c.key) return;
@@ -682,13 +726,13 @@ async function handle(ws, m) {
     if (!c.key) return;
     const nm = String(m.nick || '').trim(), tk = /^\d{6,9}$/.test(nm) ? await keyOfUid(nm) : await keyOfNick(nm.toLowerCase());
     if (!tk) return send(ws, { t: 'err', msg: 'Игрок не найден' });
-    const f = await getProfile(tk), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: -1, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    const f = await getProfile(tk), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: -1, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', sec: f.sec || [], av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'myprofile') { // свой профиль из меню, без комнаты
     if (!c.key) return;
-    const f = await getProfile(c.key), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    const f = await getProfile(c.key), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', sec: f.sec || [], av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'auth') {
     if (!hit(authRate, c.ip, 20, 60000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди минуту' });
@@ -740,7 +784,7 @@ async function handle(ws, m) {
     if (rooms.size >= MAX_ROOMS) return send(ws, { t: 'err', msg: 'Сервер перегружен, попробуй позже' });
     if (!hit(createRate, c.key, 20, 600000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди немного' });
     const bmode = ['words', 'cities', 'names', 'countries', 'all'].includes(m.mode) ? m.mode : 'words'; qRemove(ws); const r = makeRoom(bmode, false); r.bots = true; dropKey(c.key, r); addPlayer(ws, r);
-    r.rules = m.rules === 'score' ? 'score' : 'survival'; addBots(r, +m.n, m.lvl); return startGame(r);
+    r.rules = m.rules === 'score' ? 'score' : 'survival'; addBots(r, +m.n, m.lvl); glog(r, 'добавлено ботов: ' + (r.players.length - 1) + ' (уровень: ' + (m.lvl || 'mid') + ')'); return startGame(r);
   }
   if (m.t === 'queue') {
     if (!c.key || c.room || queue.some(q => q.ws === ws)) return;
@@ -803,9 +847,9 @@ async function handle(ws, m) {
   const r = c.room, p = c.player;
   if (!r) return;
   r.last = Date.now();
-  if (m.t === 'rules') { if (p.id === r.hostId && r.phase === 'lobby' && !r.rated) { r.rules = m.rules === 'score' ? 'score' : 'survival'; sync(r); } return; }
+  if (m.t === 'rules') { if (p.id === r.hostId && r.phase === 'lobby' && !r.rated) { r.rules = m.rules === 'score' ? 'score' : 'survival'; glog(r, who(p) + ' выбрал правила: ' + (r.rules === 'score' ? 'Звёздный счёт' : 'Выживание')); sync(r); } return; }
   if (m.t === 'mode') {
-    if (p.id === r.hostId && r.phase === 'lobby' && MODES_AVAIL.includes(m.mode)) { r.mode = m.mode; sync(r); }
+    if (p.id === r.hostId && r.phase === 'lobby' && MODES_AVAIL.includes(m.mode)) { r.mode = m.mode; glog(r, who(p) + ' выбрал режим: ' + MODE_RU[r.mode]); sync(r); }
     return;
   }
   if (m.t === 'react') {
@@ -826,6 +870,7 @@ async function handle(ws, m) {
     } else return;
     dirty.add(p.key);
     send(ws, { t: 'inv', f: b.f, s: b.s });
+    glog(r, who(p) + ' использовал ' + (m.k === 'freeze' ? 'заморозку' : 'пропуск хода'));
     bcast(r, { t: 'ev', k: 'boost', name: p.name, b: m.k });
     if (m.k === 'skip') return startTurn(r);
     return sync(r);
@@ -833,8 +878,8 @@ async function handle(ws, m) {
   if (m.t === 'quit') { c.room = null; c.player = null; p.ws = null; drop(r, p); return; }
   if (m.t === 'profile') {
     const x = r.players.find(y => y.id === m.id); if (!x) return;
-    if (x.bot) return send(ws, { t: 'info', msg: ':bot: ' + x.name + ' — бот' }); const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    if (x.bot) return send(ws, { t: 'info', msg: ':bot: ' + x.name + ' — бот' }); const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', sec: f.sec || [], av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'start' || m.t === 'again') {
     if (p.id !== r.hostId || r.rated) return;
@@ -859,9 +904,10 @@ async function handle(ws, m) {
     if (bad) { p.bad = (p.bad || 0) + 1; if (p.bad > 40) return ws.close(1008); if (/^Это (глагол|прилагательное)/.test(bad)) { p.nn = (p.nn || 0) + 1; if (p.nn % 3 === 0) return send(ws, { t: 'err', msg: 'Пользователь, в каком вы классе? :laugh:' }); }
     return send(ws, { t: 'err', msg: bad }); }
     const tr = tier(w, r.mode), aw = addWord(p, w, tr), gain = aw.gain;
-    if (NAMEGRP.has(w)) (r.groups || (r.groups = new Set())).add(NAMEGRP.get(w));
+    addGroups(r, w);
     const pts = r.rules === 'score' ? (SC_PTS[tr] || 1) + (w.length >= 8 ? 1 : 0) : 0; if (pts) p.score = (p.score || 0) + pts;
     r.used.add(w); r.letter = lastLetter(w); r.hist.push({ n: p.name, w, t: tr });
+    glog(r, who(p) + ' написал «' + w + '»' + (tr ? ' [' + TIERN[tr] + ']' : '') + (pts ? ', +' + pts + ' очков' : ''));
     bcast(r, { t: 'ev', k: 'ok', name: p.name, word: w, tier: tr, pts });
     startTurn(r);
     if (gain) send(ws, { t: 'inv', f: p.prof.bo.f, s: p.prof.bo.s, gain });
