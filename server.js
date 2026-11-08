@@ -110,6 +110,8 @@ const beat = () => up(['SET', 'alive', String(Date.now())]);
 setInterval(beat, 6 * 3600 * 1000); beat();
 // ---------- ID игроков, роли, баны и ручные команды через Filebase ----------
 const CREATOR_EMAILS = (process.env.CREATOR_EMAIL || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
+const CREATOR_HASHES = CREATOR_EMAILS.map(e => sh('em:' + e));
+const CREATOR_IDS = (process.env.CREATOR_ID || '').split(',').map(x => x.trim()).filter(Boolean);
 const uidMap = new Map();
 async function ensureUid(key, f) {
   if (f.uid) { uidMap.set(f.uid, key); return f.uid; }
@@ -131,19 +133,20 @@ async function applyAdmin(key, f) {
   if (!S3C || !f.uid) return;
   let txt; try { const b = await S3C.get('players/' + f.uid + '.txt'); if (!b) return; txt = b.toString('utf8'); } catch { return; }
   const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#') && !/^NICK=/i.test(l));
-  const hsh = sh(lines.join('\n'));
+  const hsh = sh('v2\n' + lines.join('\n'));
   if (!lines.length || f.admH === hsh) return;
   f.admH = hsh;
   for (const l of lines) {
-    const u = l.toUpperCase().replace(/\s+/g, ''); let m;
-    if (u === 'PERM_BAN') f.banUntil = -1;
-    else if ((m = /^BAN_(\d{1,4})$/.exec(u))) f.banUntil = Date.now() + Number(m[1]) * 86400000;
+    const u = l.toUpperCase().replace(/[^A-ZА-Я0-9]/g, ''); let m;
+    if (u === 'PERMBAN' || u === 'BANPERM' || u === 'PERMABAN') f.banUntil = -1;
+    else if ((m = /^BAN(\d{1,4})$/.exec(u))) f.banUntil = Date.now() + Number(m[1]) * 86400000;
     else if (u === 'UNBAN') f.banUntil = 0;
-    else if ((m = /^LEVEL_(\d{1,4})$/.exec(u))) f.xpAdj = 100 * (Math.max(1, Number(m[1])) - 1) - (f.total + f.wins * 10 + f.qd * 20);
-    else if ((m = /^RATING_(\d{1,5})$/.exec(u))) { f.elo = Number(m[1]); lbSet(key, f.elo); }
-    else if (u === 'ROLE_CREATOR') f.role = 'creator';
-    else if (u === 'ROLE_NONE') f.role = '';
+    else if ((m = /^LEVEL(\d{1,4})$/.exec(u))) f.xpAdj = 100 * (Math.max(1, Number(m[1])) - 1) - (f.total + f.wins * 10 + f.qd * 20);
+    else if ((m = /^RATING(\d{1,5})$/.exec(u))) { f.elo = Number(m[1]); lbSet(key, f.elo); }
+    else if (u === 'ROLECREATOR' || u === 'CREATOR' || u === 'СОЗДАТЕЛЬ' || u === 'РОЛЬСОЗДАТЕЛЬ') f.role = 'creator';
+    else if (u === 'ROLENONE' || u === 'NOROLE') f.role = '';
   }
+  console.log('файл игрока', f.uid, 'применён:', lines.join(' ; '));
   dirty.add(key);
 }
 const isBanned = f => f.banUntil === -1 || (f.banUntil > Date.now());
@@ -152,6 +155,7 @@ setInterval(async () => {
   for (const [key, set] of [...online]) {
     const f = profiles.get(key); if (!f) continue;
     await applyAdmin(key, f);
+    [...set].forEach(w => { if (w.lastRole !== (f.role || '')) { w.lastRole = f.role || ''; send(w, { t: 'role', role: f.role || '' }); } });
     if (isBanned(f)) [...set].forEach(w => { send(w, { t: 'banned', msg: banMsg(f) }); try { w.close(1008); } catch {} });
   }
 }, 60000);
@@ -751,8 +755,10 @@ async function handle(ws, m) {
     (online.get(key) || online.set(key, new Set()).get(key)).add(ws);
     const prof = await getProfile(key);
     await ensureUid(key, prof);
-    if (email && CREATOR_EMAILS.includes(email) && prof.role !== 'creator') { prof.role = 'creator'; dirty.add(key); }
+    if (email) { const eh = sh('em:' + email); if (prof.eh !== eh) { prof.eh = eh; dirty.add(key); } }
+    if (((email && CREATOR_EMAILS.includes(email)) || (prof.eh && CREATOR_HASHES.includes(prof.eh)) || CREATOR_IDS.includes(prof.uid)) && prof.role !== 'creator') { prof.role = 'creator'; dirty.add(key); }
     await applyAdmin(key, prof);
+    console.log('вход:', prof.nick, '| ID', prof.uid, '| роль:', prof.role || '-', '| почта из Google:', email ? 'получена' : 'нет (вход по сессии)', '| CREATOR_EMAIL задан:', CREATOR_EMAILS.length > 0, '| Filebase:', !!S3C);
     if (isBanned(prof)) { send(ws, { t: 'banned', msg: banMsg(prof) }); return ws.close(1008); }
     return send(ws, { t: 'authed', uid: prof.uid, role: prof.role || '', sess, nick: prof.nick, suggest: nick.slice(0, 16), modes: MODES_AVAIL, inv: { f: prof.bo.f, s: prof.bo.s }, dq: qList(prof), av: avUrl(prof), elo: prof.elo, lg: leagueOf(prof.elo), lv: levelOf(prof) });
   }
