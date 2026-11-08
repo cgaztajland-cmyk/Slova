@@ -336,6 +336,26 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 #reacts .ic{width:30px;height:30px;transition:transform .2s}
 #reacts button:hover .ic{transform:scale(1.18) rotate(-6deg)}
 .fl .ic{width:46px;height:46px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+/* --- секретные слова: чёрно-серый стиль --- */
+.tfx.t5{--c:#d6d6d6;--cr:214,214,214}
+.tfx .dark{position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,rgba(0,0,0,.35),rgba(0,0,0,.94) 72%);animation:darkin var(--life,4s) ease both}
+@keyframes darkin{0%{opacity:0}18%{opacity:1}85%{opacity:1}100%{opacity:0}}
+.tfx .smoke{position:absolute;left:-20%;top:20%;width:80vmax;height:60vmax;border-radius:50%;background:radial-gradient(circle,rgba(150,150,150,.22),transparent 65%);filter:blur(30px);animation:smk 7s ease-in-out infinite alternate}
+.tfx .smoke.s2{left:auto;right:-25%;top:35%;background:radial-gradient(circle,rgba(100,100,100,.26),transparent 65%);animation-duration:9s;animation-direction:alternate-reverse}
+@keyframes smk{from{transform:translate(0,0) scale(1)}to{transform:translate(12vmax,-6vmax) scale(1.25)}}
+.tfx .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 4px);mix-blend-mode:overlay;animation:scanmv 1.6s linear infinite}
+@keyframes scanmv{to{background-position:0 8px}}
+.tfx.t5 .glow{background:radial-gradient(circle at 50% 46%,rgba(255,255,255,.10),transparent 60%)}
+.tfx.t5 .rays{opacity:.5}
+.tfx.t5 .ring{border-color:rgba(255,255,255,.45);box-shadow:none}
+.tfx.t5 .lab{color:#bdbdbd;text-shadow:0 0 12px rgba(0,0,0,.9);letter-spacing:.42em}
+.tfx.t5 .wd{text-shadow:none}
+.tfx.t5 .wd span{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:#f4f4f4;-webkit-text-stroke:2px #000;paint-order:stroke fill;filter:drop-shadow(0 0 18px rgba(255,255,255,.35)) drop-shadow(0 6px 0 #000);animation:letterin 1s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i) * 70ms)}
+.tfx.t5 .who{color:#9a9a9a}
+body.secretfx main{animation:darkpulse 3.4s ease-in-out}
+@keyframes darkpulse{0%,100%{filter:none}25%,75%{filter:brightness(.4) grayscale(.9)}}
+.hist .t5{background:linear-gradient(90deg,#fff,#8a8a8a,#fff);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+.st.secret{border:1px solid #cfcfcf!important;background:linear-gradient(#050505,#1c1c1c)!important;color:#f0f0f0!important;box-shadow:inset 0 0 18px rgba(255,255,255,.12)}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="gHeart" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a9c"/><stop offset="1" stop-color="#e8174f"/></linearGradient><linearGradient id="gFlame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset=".6" stop-color="#ff6a2b"/><stop offset="1" stop-color="#e8321d"/></linearGradient><radialGradient id="gFace" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#fff2a8"/><stop offset=".55" stop-color="#ffd23f"/><stop offset="1" stop-color="#f0a500"/></radialGradient><radialGradient id="gSkull" cx=".4" cy=".3" r=".9"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#b9c4e8"/></radialGradient><linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1b0"/><stop offset=".5" stop-color="#ffc233"/><stop offset="1" stop-color="#ff8a1f"/></linearGradient></defs></svg><button id="fsbtn" class="hide" title="На весь экран" aria-label="На весь экран">:expand:</button><button id="mailfab" class="hide" title="Почта">:mail:<span id="mailcnt" class="chip hot"></span></button>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">:volume:</button><button id="trk" title="Сменить музыку">:music:</button>
 <main>
@@ -452,7 +472,7 @@ const RM = () => LS.get('sb_room'), setRM = c => LS.set('sb_room', c), clearRM =
 let NICK = '', ROLE = '', SUGGEST = '', INV = { f: 0, s: 0 }, MODES = ['words'], DQ = [], AV = '', ELO = 0, LG = '', LV = 1, FR = { fr: [], rq: [] }, INVC = '';
 const MODE_NAMES = { words: 'Слова', cities: 'Города', names: 'Имена', countries: 'Страны', animals: 'Животные', food: 'Еда', all: 'Все вместе' };
 const nm = () => NICK;
-const TIERS = [null, { n: 'РЕДКОЕ', c: '#4da3ff' }, { n: 'ЭПИЧЕСКОЕ', c: '#b86bff' }, { n: 'ЛЕГЕНДАРНОЕ', c: '#ff8a1f' }, { n: 'МИФИЧЕСКОЕ', c: '#ff2442' }, { n: 'СЕКРЕТНОЕ', c: '#ff4df0' }];
+const TIERS = [null, { n: 'РЕДКОЕ', c: '#4da3ff' }, { n: 'ЭПИЧЕСКОЕ', c: '#b86bff' }, { n: 'ЛЕГЕНДАРНОЕ', c: '#ff8a1f' }, { n: 'МИФИЧЕСКОЕ', c: '#ff2442' }, { n: 'СЕКРЕТНОЕ', c: '#bdbdbd' }];
 
 const ICONS = {
   rocket: `<svg viewBox="0 0 24 24"><path d="M12 2.8c3.3 2.2 5.2 5.8 5.2 9.8l-2.4 2.6H9.2L6.8 12.6c0-4 1.9-7.6 5.2-9.8z" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="9.6" r="1.7" fill="currentColor" fill-opacity=".5"/><path d="M9.2 15.2 6.4 18l.9 2.8 2.7-.9M14.8 15.2l2.8 2.8-.9 2.8-2.7-.9M12 17.2v4.2"/></svg>`,
@@ -648,7 +668,7 @@ sfx.t1 = () => { [784, 1175].forEach((f, i) => tone(f, 1.0, 'sine', .06, i * .12
 sfx.t2 = () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 1.2, 'sine', .06, i * .1)); tone(131, 1.3, 'sine', .08); };
 sfx.t3 = () => { [392, 523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 1.4, 'sine', .055, i * .09)); [196, 262].forEach(f => tone(f, 1.6, 'triangle', .07, .15)); };
 sfx.t4 = () => { tone(65, 2.2, 'sine', .15); tone(98, 2, 'sine', .08, .08); [311, 370, 466, 622, 740, 932].forEach((f, i) => tone(f, 1.8, 'sine', .045, .2 + i * .12)); [1568, 2093, 2637].forEach((f, i) => tone(f, 1.2, 'sine', .04, .9 + i * .12)); };
-sfx.t5 = () => { noiseBurst(1.2, 200, 7000, .12); [262, 330, 392, 523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => tone(f, 1.6, 'sine', .05, .5 + i * .09)); tone(65, 2.6, 'sine', .15, .1); tone(98, 2.4, 'triangle', .07, .12); [2637, 3136, 3951, 4699].forEach((f, i) => tone(f, 1.4, 'sine', .035, 1.5 + i * .12)); };
+sfx.t5 = () => { noiseBurst(1.5, 300, 9000, .1, 'highpass'); tone(41, 3.6, 'sine', .16, 0); tone(55, 3.2, 'sine', .1, 1.5); setTimeout(() => { tone(49, 2.2, 'sine', .22); noiseBurst(.8, 400, 60, .25, 'lowpass'); }, 1500); [329.6, 311.1, 293.7, 277.2].forEach((f, i) => tone(f, 1.8, 'sine', .035, 1.8 + i * .35)); };
 sfx.lose = () => { [392, 330, 262, 196].forEach((f, i) => tone(f, .5, 'triangle', .16, i * .18)); tone(98, 1.3, 'sine', .25, .3); };
 function popPts(m) { if (!m.pts) return; const d = document.createElement('div'); d.className = 'ptspop'; d.textContent = '+' + m.pts + ' :star: ' + m.name; document.body.append(d); setTimeout(() => d.remove(), 1500); }
 function ov(cls, ms) { const o = document.createElement('div'); o.className = 'ov ' + cls; document.body.append(o); setTimeout(() => o.remove(), ms); }
@@ -772,11 +792,11 @@ function confetti(cols, n) { for (let i = 0; i < n; i++) P.push({ x: Math.random
 function rise(col, n) { for (let i = 0; i < n; i++) P.push({ x: Math.random() * W, y: H + 10, vx: (Math.random() - .5) * .8, vy: -(1 + Math.random() * 2.2), r: 1.5 + Math.random() * 2.5, life: 120 + Math.random() * 80, col, up: 1 }); }
 function fancy(T, name, word) {
   const t = TIERS[T], o = document.createElement('div'), el = (c, x) => { const d = document.createElement('div'); d.className = c; if (x !== undefined) d.textContent = x; return d; };
-  const life = [0, 1.9, 2.2, 2.5, 3.1, 4.2][T]; o.className = 'tfx t' + T; o.style.setProperty('--life', life + 's'); o.style.setProperty('--c', t.c); o.style.setProperty('--cr', hexRgb(t.c));
+  const life = [0, 1.9, 2.2, 2.5, 3.1, 4.0][T]; o.className = 'tfx t' + T; o.style.setProperty('--life', life + 's'); o.style.setProperty('--c', t.c); o.style.setProperty('--cr', hexRgb(t.c));
   o.append(el('glow'));
   if (T >= 3) o.append(el('rays'));
-  if (T >= 4) o.append(el('aur'));
-  if (T === 5) { o.append(el('kal')); o.append(el('kal k2')); }
+  if (T === 4) o.append(el('aur'));
+  if (T === 5) { o.append(el('dark'), el('smoke'), el('smoke s2'), el('scan')); }
   for (let i = 0; i < Math.min(T, 3); i++) { const r = el('ring'); r.style.setProperty('--d', (i * .35) + 's'); o.append(r); }
   const box = el('box'), lab = el('lab'), wd = el('wd'), who = el('who', name);
   lab.textContent = ':star:'.repeat(T) + ' ' + t.n;
@@ -786,7 +806,7 @@ function fancy(T, name, word) {
   if (T === 1) rise(t.c, 24);
   if (T === 2) { centerBurst(t.c, 40); rise(t.c, 36); }
   if (T === 3) { confetti(['#ffb703', '#ffd166', '#ff8a1f', '#fff3c4'], 100); centerBurst(t.c, 50); }
-  if (T === 5) { const cols = ['#ff4df0', '#4dc9ff', '#7dff9f', '#ffd24d', '#ff6a3d', '#b86bff']; rise('#ff4df0', 60); rise('#4dc9ff', 60); confetti(cols, 160); for (let i = 0; i < 9; i++) setTimeout(() => burst(Math.random() * W, H * (.15 + Math.random() * .55), cols[i % cols.length], 70), i * 380); document.body.classList.add('mythic'); setTimeout(() => document.body.classList.remove('mythic'), 2600); }
+  if (T === 5) { rise('#9a9a9a', 70); rise('#d8d8d8', 30); [0, 700, 1400].forEach(d => setTimeout(() => centerBurst(d === 700 ? '#ffffff' : '#7a7a7a', 40), d)); document.body.classList.add('secretfx'); setTimeout(() => document.body.classList.remove('secretfx'), 3500); }
   if (T === 4) { rise('#ff5d73', 50); rise('#b86bff', 40); [0, 500, 1000].forEach(d => setTimeout(() => centerBurst(d === 500 ? '#b86bff' : '#ff2442', 60), d)); document.body.classList.add('mythic'); setTimeout(() => document.body.classList.remove('mythic'), 2200); }
 }
 function onMsg(m) {
@@ -811,6 +831,7 @@ function onMsg(m) {
   else if (m.t === 'queued') { show('queue'); document.querySelector('#queue .sub').textContent = m.casual ? (m.bots ? 'Быстрая игра («' + (MODE_NAMES[$('qMode').value] || 'Слова') + '») без рейтинга. Если за 12 секунд никого не найдём, добавим ботов.' : 'Быстрая игра без рейтинга: ищем игроков.') : 'Рейтинговая игра 1 на 1, режим «' + (MODE_NAMES[$('rMode').value] || 'Слова') + '». Допустимый разброс рейтинга растёт с ожиданием.'; }
   else if (m.t === 'typing') typingShow(m);
   else if (m.t === 'unqueued') show('menu');
+  else if (m.t === 'role') { ROLE = m.role || ''; paintMe(); }
   else if (m.t === 'banned') { LS.set('sb_sess', ''); showBan(m.msg); }
   else if (m.t === 'profile') showProfile(m);
   else if (m.t === 'ev') {
