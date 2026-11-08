@@ -124,20 +124,27 @@ async function ensureUid(key, f) {
   return null;
 }
 async function keyOfUid(id) { if (uidMap.has(id)) return uidMap.get(id); if (!KV) return null; const k = await up(['GET', 'uid:' + id]); if (k) uidMap.set(id, k); return k || null; }
-const ADM_HELP = '# Команды (по одной в строке, без решётки). Сервер читает файл при входе игрока и раз в минуту, пока он онлайн.\n# PERM_BAN      бан навсегда\n# BAN_3         бан на 3 дня\n# UNBAN         снять бан\n# LEVEL_20      поставить уровень 20\n# RATING_1200   поставить рейтинг 1200\n# ROLE_CREATOR  статус СОЗДАТЕЛЬ (ROLE_NONE убирает)\n# Чтобы выполнить ту же команду ещё раз, добавь под ней любую строку (например: повтор 2).\n';
+const ADM_HELP = '# Чтобы выдать команду, напиши её отдельной строкой БЕЗ решётки в начале. Строки с решёткой сервер игнорирует.\n# Примеры (скопируй нужную строку без решётки и больше ничего в ней не пиши):\n# PERM_BAN\n# BAN_3\n# UNBAN\n# LEVEL_20\n# RATING_1200\n# ROLE_CREATOR\n# Значение: PERM_BAN бан навсегда, BAN_3 бан на 3 дня, UNBAN снять бан, LEVEL_20 уровень 20, RATING_1200 рейтинг 1200, ROLE_CREATOR статус СОЗДАТЕЛЬ (ROLE_NONE убирает).\n# Сервер читает файл при входе игрока и раз в минуту, пока он онлайн.\n# Чтобы выполнить ту же команду ещё раз, добавь под ней любую строку (например: повтор 2).\n';
+const ADM_HELP_OLD = '# Команды (по одной в строке, без решётки). Сервер читает файл при входе игрока и раз в минуту, пока он онлайн.\n# PERM_BAN      бан навсегда\n# BAN_3         бан на 3 дня\n# UNBAN         снять бан\n# LEVEL_20      поставить уровень 20\n# RATING_1200   поставить рейтинг 1200\n# ROLE_CREATOR  статус СОЗДАТЕЛЬ (ROLE_NONE убирает)\n# Чтобы выполнить ту же команду ещё раз, добавь под ней любую строку (например: повтор 2).\n';
 function adminTemplate(f) {
   if (!S3C) return; const k = 'players/' + f.uid + '.txt';
   S3C.get(k).then(b => { if (!b) return S3C.put(k, Buffer.from('# Игрок ' + f.uid + '\nNICK=' + (f.nick || '') + '\n' + ADM_HELP), 'text/plain; charset=utf-8'); }).catch(() => {});
+}
+const CMD_RE = /^(PERMBAN|BANPERM|PERMABAN|BAN\d{1,4}|UNBAN|LEVEL\d{1,4}|RATING\d{1,5}|ROLECREATOR|CREATOR|СОЗДАТЕЛЬ|РОЛЬСОЗДАТЕЛЬ|ROLENONE|NOROLE)$/;
+function cmdOf(l) {
+  const nz = t => t.toUpperCase().replace(/[^A-ZА-Я0-9]/g, ''), tk = l.split(/\s+/);
+  for (const c of [nz(l), nz(tk[0] || ''), nz(tk.slice(0, 2).join('')), nz(tk.slice(0, 3).join(''))]) if (CMD_RE.test(c)) return c;
+  return null;
 }
 async function applyAdmin(key, f) {
   if (!S3C || !f.uid) return;
   let txt; try { const b = await S3C.get('players/' + f.uid + '.txt'); if (!b) return; txt = b.toString('utf8'); } catch { return; }
   const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#') && !/^NICK=/i.test(l));
-  const hsh = sh('v2\n' + lines.join('\n'));
+  const hsh = sh('v3\n' + lines.join('\n'));
   if (!lines.length || f.admH === hsh) return;
   f.admH = hsh;
   for (const l of lines) {
-    const u = l.toUpperCase().replace(/[^A-ZА-Я0-9]/g, ''); let m;
+    const u = cmdOf(l); if (!u) continue; let m;
     if (u === 'PERMBAN' || u === 'BANPERM' || u === 'PERMABAN') f.banUntil = -1;
     else if ((m = /^BAN(\d{1,4})$/.exec(u))) f.banUntil = Date.now() + Number(m[1]) * 86400000;
     else if (u === 'UNBAN') f.banUntil = 0;
@@ -146,7 +153,8 @@ async function applyAdmin(key, f) {
     else if (u === 'ROLECREATOR' || u === 'CREATOR' || u === 'СОЗДАТЕЛЬ' || u === 'РОЛЬСОЗДАТЕЛЬ') f.role = 'creator';
     else if (u === 'ROLENONE' || u === 'NOROLE') f.role = '';
   }
-  console.log('файл игрока', f.uid, 'применён:', lines.join(' ; '));
+  const okc = lines.filter(cmdOf);
+  console.log('файл игрока', f.uid, okc.length ? 'команды применены: ' + okc.join(' ; ') : 'команд не распознано. Строки: ' + lines.join(' | '));
   dirty.add(key);
 }
 const isBanned = f => f.banUntil === -1 || (f.banUntil > Date.now());
@@ -212,7 +220,7 @@ function addWord(p, w, t) {
     if ((t === 2 || t === 4 || t === 5) && f.bo.f < 5) { f.bo.f++; gain += 'f'; }
     if (t >= 3 && f.bo.s < 5) { f.bo.s++; gain += 's'; }
   }
-  if (w.length > f.best.length) f.best = w;
+  if (t !== 5 && w.length > f.best.length) f.best = w;
   const ks = Object.keys(f.w); let n = ks.length;
   if (n > 300) for (const k of ks) { if (n <= 250) break; if (f.w[k] === 1) { delete f.w[k]; n--; } }
   dirty.add(p.key);
@@ -324,7 +332,7 @@ setInterval(() => rooms.forEach(glogFlush), 30000);
 // ---------- боты ----------
 const BOT_NAMES = ['Орион', 'Луна', 'Нова', 'Комета', 'Квазар', 'Мира', 'Сириус', 'Астра', 'Вега', 'Зенит', 'Галактика', 'Туманность'];
 // know — какую долю словаря «знает» бот, think — пауза на раздумье (мс), cps — мс на букву, miss — шанс «не вспомнить» слово
-const BOT_LVL = { easy: { know: 14, think: [2200, 4200], cps: 330, miss: .10 }, mid: { know: 32, think: [1400, 3000], cps: 240, miss: .06 }, hard: { know: 62, think: [900, 2200], cps: 170, miss: .03 } };
+const BOT_LVL = { easy: { know: 10, think: [2600, 4800], cps: 360, miss: .12, tire: .02 }, mid: { know: 22, think: [1800, 3800], cps: 280, miss: .14, tire: .018 }, hard: { know: 40, think: [1200, 2800], cps: 210, miss: .08, tire: .015 } };
 const BYL = new Map();
 function botIndex(st) { if (BYL.has(st)) return BYL.get(st); const m = new Map(); st.forEach(w => { const l = w[0]; if (!m.has(l)) m.set(l, []); m.get(l).push(w); }); BYL.set(st, m); return m; }
 const hashN = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -337,9 +345,12 @@ function botTurn(r, p) {
   const cfg = BOT_LVL[p.lvl], stamp = r.turnAt, live = () => r.phase === 'play' && r.players[r.turn] === p && r.turnAt === stamp;
   const idx = botIndex((r.mode === 'all' ? ALL : SETS[r.mode]) || DICT), letter = r.letter || [...idx.keys()][Math.floor(Math.random() * idx.size)];
   let cand = (idx.get(letter) || []).filter(w => !r.used.has(w) && !NOFX.has(w) && !groupUsed(r, w) && hashN(p.seed + w) % 100 < cfg.know);
-  if (p.lvl === 'hard') cand = cand.sort((a, b) => b.length - a.length).slice(0, 15);
-  if (!cand.length || Math.random() < cfg.miss) return; // «не вспомнил слово»: ход сгорит по таймеру
-  const w = cand[Math.floor(Math.random() * cand.length)];
+  const missP = Math.min(.55, cfg.miss + cfg.tire * Math.floor(r.used.size / 2)); // бот устаёт: чем дольше игра, тем чаще не вспоминает слово
+  if (!cand.length || Math.random() < missP) return; // «не вспомнил слово»: ход сгорит по таймеру
+  const pick = () => cand[Math.floor(Math.random() * cand.length)];
+  let w = pick();
+  if (p.lvl === 'hard') { for (let i = 0; i < 9; i++) { const x = pick(); if (x.length > w.length) w = x; } }
+  else if (p.lvl === 'easy') { for (let i = 0; i < 2; i++) { const x = pick(); if (x.length < w.length) w = x; } }
   const typeMs = w.length * cfg.cps, think = Math.min(cfg.think[0] + Math.random() * (cfg.think[1] - cfg.think[0]), Math.max(300, TURN_MS - typeMs - 3000));
   let i = 0;
   const step = () => {
@@ -730,13 +741,13 @@ async function handle(ws, m) {
     if (!c.key) return;
     const nm = String(m.nick || '').trim(), tk = /^\d{6,9}$/.test(nm) ? await keyOfUid(nm) : await keyOfNick(nm.toLowerCase());
     if (!tk) return send(ws, { t: 'err', msg: 'Игрок не найден' });
-    const f = await getProfile(tk), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: -1, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', sec: f.sec || [], av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    const f = await getProfile(tk), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).filter(([w]) => !SECRETS.has(w)).slice(0, 3).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: -1, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: SECRETS.has(f.best) ? '' : f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'myprofile') { // свой профиль из меню, без комнаты
     if (!c.key) return;
-    const f = await getProfile(c.key), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', sec: f.sec || [], av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    const f = await getProfile(c.key), top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).filter(([w]) => !SECRETS.has(w)).slice(0, 3).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: -1, mine: true, name: f.nick, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: SECRETS.has(f.best) ? '' : f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'auth') {
     if (!hit(authRate, c.ip, 20, 60000)) return send(ws, { t: 'err', msg: 'Слишком часто, подожди минуту' });
@@ -884,8 +895,8 @@ async function handle(ws, m) {
   if (m.t === 'quit') { c.room = null; c.player = null; p.ws = null; drop(r, p); return; }
   if (m.t === 'profile') {
     const x = r.players.find(y => y.id === m.id); if (!x) return;
-    if (x.bot) return send(ws, { t: 'info', msg: ':bot: ' + x.name + ' — бот' }); const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([w, n]) => [w, n, tier(w)]);
-    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', sec: f.sec || [], av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
+    if (x.bot) return send(ws, { t: 'info', msg: ':bot: ' + x.name + ' — бот' }); const f = x.prof, top = Object.entries(f.w).sort((a, b) => b[1] - a[1]).filter(([w]) => !SECRETS.has(w)).slice(0, 3).map(([w, n]) => [w, n, tier(w)]);
+    return send(ws, { t: 'profile', id: x.id, name: x.name, games: f.games, wins: f.wins, total: f.total, tiers: f.t, best: SECRETS.has(f.best) ? '' : f.best, top, myth: f.m, lv: levelOf(f), elo: f.elo, lg: leagueOf(f.elo), rg: f.rg, reg: f.reg, frc: f.fr.length, uid: f.uid, role: f.role || '', av: avUrl(f), ach: ACH.map(([id, n]) => [n, f.ac.includes(id) ? 1 : 0]) });
   }
   if (m.t === 'start' || m.t === 'again') {
     if (p.id !== r.hostId || r.rated) return;
