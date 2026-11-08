@@ -356,6 +356,38 @@ body.secretfx main{animation:darkpulse 3.4s ease-in-out}
 @keyframes darkpulse{0%,100%{filter:none}25%,75%{filter:brightness(.4) grayscale(.9)}}
 .hist .t5{background:linear-gradient(90deg,#fff,#8a8a8a,#fff);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
 .st.secret{border:1px solid #cfcfcf!important;background:linear-gradient(#050505,#1c1c1c)!important;color:#f0f0f0!important;box-shadow:inset 0 0 18px rgba(255,255,255,.12)}
+/* --- v13: ровные отступы, телефоны --- */
+section.card:not(.hide){display:flex;flex-direction:column;gap:12px}
+section.card:not(.hide)>*{margin-top:0!important;margin-bottom:0!important}
+#gcard{display:flex;flex-direction:column;align-items:center;gap:12px}
+#gcard>*{margin:0!important}
+#gcard #word{width:100%}
+#boosts{width:100%}
+#reacts{gap:8px}
+.pl{gap:8px;flex-wrap:wrap}
+.pl>span{flex:none}
+.pl .pn{flex:1 1 130px;min-width:0}
+.pl .pn span{overflow-wrap:anywhere}
+.reacts button{min-height:0!important}
+@media (max-width:430px){
+  main{padding-left:10px;padding-right:10px}
+  .card{padding:14px}
+  .row{gap:8px}
+  .seg button{font-size:13px!important;padding:6px 4px!important}
+  .ptab{padding:6px 10px;font-size:12.5px!important}
+  .boost{padding:8px 10px;gap:8px;min-height:52px}
+  .boost .b2{display:none}
+  .boost .bi{width:34px;height:34px}
+  .boost .b1{font-size:13px}
+  .reacts button{width:44px;height:44px;padding:0!important}
+  .reacts .ic{width:26px;height:26px}
+  .fcard{padding:12px;gap:10px}
+  #bPlay{font-size:18px;min-height:62px}
+  .mode{padding:12px}
+  .lobbybox{padding:12px}
+  .pl{padding:8px 10px}
+  .wr,.idpill{margin-left:0;margin-right:0}
+}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="gHeart" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a9c"/><stop offset="1" stop-color="#e8174f"/></linearGradient><linearGradient id="gFlame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset=".6" stop-color="#ff6a2b"/><stop offset="1" stop-color="#e8321d"/></linearGradient><radialGradient id="gFace" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#fff2a8"/><stop offset=".55" stop-color="#ffd23f"/><stop offset="1" stop-color="#f0a500"/></radialGradient><radialGradient id="gSkull" cx=".4" cy=".3" r=".9"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#b9c4e8"/></radialGradient><linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1b0"/><stop offset=".5" stop-color="#ffc233"/><stop offset="1" stop-color="#ff8a1f"/></linearGradient></defs></svg><button id="fsbtn" class="hide" title="На весь экран" aria-label="На весь экран">:expand:</button><button id="mailfab" class="hide" title="Почта">:mail:<span id="mailcnt" class="chip hot"></span></button>
 <canvas id="fx"></canvas><div id="flash"></div><div id="vig"></div><div id="invite" class="hide"><span id="invtxt"></span><button id="bInvJoin" class="alt">Войти</button><button id="bInvNo" class="quit">✕</button></div><div id="banner"></div><div id="modal" class="hide"><div class="card" id="mbody"></div></div><div id="toast"></div><button id="snd" title="Звук">:volume:</button><button id="trk" title="Сменить музыку">:music:</button>
 <main>
@@ -415,7 +447,7 @@ body.secretfx main{animation:darkpulse 3.4s ease-in-out}
       <div class="lbl">Что играем</div>
       <div class="seg wrap" data-for="botMode"><button data-v="words" class="on">Слова</button><button data-v="cities">Города</button><button data-v="names">Имена</button><button data-v="countries">Страны</button><button data-v="all">Все вместе</button></div><input type="hidden" id="botMode" value="words">
       <div class="lbl">Сложность</div>
-      <div class="seg" data-for="botLvl"><button data-v="easy">Новичок</button><button data-v="mid" class="on">Игрок</button><button data-v="hard">Мастер</button></div><input type="hidden" id="botLvl" value="mid">
+      <div class="seg" data-for="botLvl"><button data-v="easy">Новичок</button><button data-v="mid" class="on">Игрок</button><button data-v="hard">Мастер</button></div><input type="hidden" id="botLvl" value="mid"><div id="botLvlDesc" class="rdesc"></div>
       <div class="lbl">Соперников</div>
       <div class="seg" data-for="botN"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button></div><input type="hidden" id="botN" value="2">
       <div class="lbl">Правила</div>
@@ -909,11 +941,10 @@ function showProfile(m) {
   const tl = el('div', 'hist'); if (!m.top.length) tl.append(el('span', '', 'Пока пусто'));
   m.top.forEach(([w, c, t]) => tl.append(el('span', t ? 't' + t : '', w + ' x' + c)));
   const wr = m.games ? Math.round(m.wins / m.games * 100) : 0, wrEl = el('div', 'wr'), wb = el('div', 'wrb'), wi = document.createElement('i'); wi.style.width = wr + '%'; wb.append(wi); wrEl.append(el('div', 'wrh', 'Винрейт · побед ' + m.wins + ' из ' + m.games), el('div', 'wrv', m.games ? wr + '%' : '—'), wb);
-  kids.push(g, wrEl, el('div', 'sub', (m.reg ? 'В игре с ' + new Date(m.reg).toLocaleDateString('ru-RU') + ' · ' : '') + 'Друзей: ' + (m.frc || 0)), tg, el('h3', '', 'Любимые слова'), tl, ...(m.sec && m.sec.length ? [el('h3', '', 'Секретные слова'), (() => { const sl = el('div', 'hist'); m.sec.forEach(w => sl.append(el('span', 't5', w))); return sl; })()] : []));
+  kids.push(g, wrEl, el('div', 'sub', (m.reg ? 'В игре с ' + new Date(m.reg).toLocaleDateString('ru-RU') + ' · ' : '') + 'Друзей: ' + (m.frc || 0)), tg, el('h3', '', 'Любимые слова'), tl);
   const got = m.ach.filter(a => a[1]).length, al = el('div', 'hist');
   m.ach.forEach(([n, u]) => { const sp = el('span', u ? 't3' : '', (u ? ':trophy: ' : ':lock: ') + n); if (!u) sp.style.opacity = '.45'; al.append(sp); });
   kids.push(el('h3', '', 'Достижения ' + got + '/' + m.ach.length), al);
-  if (m.myth && m.myth.length) { const hl = el('div', 'hist'); m.myth.forEach(w => hl.append(el('span', 't4', w))); kids.push(el('h3', '', 'Зал мифических слов'), hl); }
   if (m.mine) { const pb = el('button', 'pen', '✎'); pb.title = 'Сменить ник'; pb.onclick = () => { closeModal(); $('nickin').value = NICK; $('bNickCancel').classList.remove('hide'); show('nick'); }; kids[1].append(' ', pb); }
   if (!m.mine && m.id !== me && !(FR && FR.fr && FR.fr.some(f => f.nick === m.name))) { const fb = el('button', 'alt', '＋ Добавить в друзья'); fb.onclick = () => { send({ t: 'friend_add', nick: m.name }); fb.disabled = true; fb.textContent = 'Запрос отправлен'; }; kids.push(fb); } else if (!m.mine && m.id !== me) kids.push(el('div', 'friendbadge', '✓ В друзьях'));
   const x = el('button', 'quit', 'Закрыть'); x.onclick = () => closeModal(); kids.push(x);
@@ -990,13 +1021,14 @@ $('avfile').onchange = async e => {
 };
 $('bRated').onclick = () => { A(); send({ t: 'queue', mode: $('rMode').value }); };
 $('bQuitG').onclick = () => { if (confirm('Выйти из игры? Это будет считаться поражением.')) $('bQuit').click(); };
+const LVL_DESC = { easy: 'Знает мало слов, думает долго и часто ошибается. Для разминки.', mid: 'Знает больше слов и отвечает быстрее, но к концу партии начинает уставать и ошибаться.', hard: 'Много слов и быстрая реакция, но тоже устаёт к концу партии. Обыграть можно.' };
 const RULES_DESC = { survival: 'У каждого 3 жизни. Не успел ответить за отведённое время — минус жизнь. Побеждает последний выживший.', score: 'Жизней нет: у каждого по 6 ходов. Очки за слово: обычное 1, редкое 3, эпическое 7, легендарное 15, мифическое 30, плюс 1 за слово от 8 букв. Побеждает тот, у кого больше очков.' };
 document.addEventListener('click', e => { const b = e.target.closest('.seg button'); if (!b) return; const seg = b.parentElement;
   if (seg.id === 'modeseg') { if (S && S.host === me && S.phase === 'lobby') send({ t: 'mode', mode: b.dataset.v }); return; }
   if (seg.id === 'ruleseg') { if (S && S.host === me && S.phase === 'lobby' && !S.rated) send({ t: 'rules', rules: b.dataset.v }); return; }
   if (!seg.dataset.for) return;
-  seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); $(seg.dataset.for).value = b.dataset.v; if (seg.dataset.for === 'botRules') $('botRulesDesc').textContent = RULES_DESC[b.dataset.v]; });
-$('botRulesDesc').textContent = RULES_DESC.survival;
+  seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); $(seg.dataset.for).value = b.dataset.v; if (seg.dataset.for === 'botRules') $('botRulesDesc').textContent = RULES_DESC[b.dataset.v]; if (seg.dataset.for === 'botLvl') $('botLvlDesc').textContent = LVL_DESC[b.dataset.v]; });
+$('botRulesDesc').textContent = RULES_DESC.survival; $('botLvlDesc').textContent = LVL_DESC.mid;
 $('bPlay').onclick = () => { A(); show('play'); };
 $('bPlayBack').onclick = () => show('menu');
 (() => {
