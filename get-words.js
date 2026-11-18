@@ -8,3 +8,5 @@ const fs = require('fs'), path = require('path');
   fs.writeFileSync(path.join(__dirname, 'common.txt'), t);
   console.log('Список частых слов загружен:', t.split(/\s+/).filter(Boolean).length);
 })().catch(e => console.log('Список частых слов не загрузился (' + e.message + '), работаем без него'));
+// большой словарь (OpenCorpora и др.)
+require('./get-ext.js').run().catch(e => console.log('Большой словарь: ошибка', e.message));
