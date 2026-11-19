@@ -1,7 +1,7 @@
 // Google Apps Script: пингует Render каждые 5 минут, чтобы бесплатный сервер не засыпал.
 // Как поставить: script.google.com -> Новый проект -> вставь этот код -> один раз запусти функцию setup()
 // (разреши доступ) -> готово. Проверка: меню "Выполнения" должна показывать запуски ping каждые 5 минут.
-const PING_URL = 'https://slovoboy.onrender.com/ping';
+const PING_URL = 'https://slova-mf4y.onrender.com/ping';
 
 function ping() {
   try {
